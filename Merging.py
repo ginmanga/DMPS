@@ -4,12 +4,8 @@ import pandas as pd
 import pandasql as ps
 import numpy as np
 import gzip, os, csv
-import LoadData
 
 #FUNDAMAINID, CRSPLINK, CAPIQID, FUNDADEBT, FUNDACMP, SPCR = LoadData.load_data_main()
-FUNDAMAINID, CRSPLINK, CAPIQID, FUNDADEBT, FUNDACMP = LoadData.load_data_main()
-SPCR  = LoadData.load_data_main_2()
-
 
 
 #Merge FUNDA WITH CRSPLINK BUT WITH DUPLICATES
