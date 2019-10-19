@@ -10,18 +10,22 @@ import gzip, os, csv
 
 #Merge FUNDA WITH CRSPLINK BUT WITH DUPLICATES
 #COLLAPSE THE TABLE AND REMERGE PROPERLY
+
+
+CRSPLINK = pd.read_csv(os.path.join(datadirectory, "collapsedlink.csv"), index_col=0)
+
 COMPUCRSP = pd.merge(FUNDAMAINID,
-                         CRSPLINK[['gvkey','conm','LPERMNO','LPERMCO','cusip','cik','LINKDT','LINKENDDT', 'sic']],
+                         CRSPLINK[['gvkey','conm','LPERMNO','LPERMCO','cusip','cik','LINKDT','LINKENDDT', 'sic', 'ipodate']],
                          left_on=['gvkey'],
                          right_on = ['gvkey'], how='left')
 
 #ERASE DUPLICATES AND MISSING
-COMPUCRSP.loc[COMPUCRSP.LINKENDDT == 'E', 'LINKENDDT'] = 20191012
+#COMPUCRSP.loc[COMPUCRSP.LINKENDDT == 'E', 'LINKENDDT'] = 20191012
 COMPUCRSP = COMPUCRSP.dropna(subset=['LINKENDDT'])
 COMPUCRSP = COMPUCRSP.astype({'datadate': 'int64', 'LINKDT':'int64', 'LINKENDDT':'int64'})
 COMPUCRSP = COMPUCRSP[(COMPUCRSP.datadate >= COMPUCRSP.LINKDT) & (COMPUCRSP.datadate <= COMPUCRSP.LINKENDDT)]
 
-COMPUCRSP_T = COMPUCRSP[(COMPUCRSP.sic >= 7000) & (COMPUCRSP.sic < 6000)].index
+#COMPUCRSP_T = COMPUCRSP[(COMPUCRSP.sic >= 7000) & (COMPUCRSP.sic < 6000)].index
 
 #df = df[df['closing_price'].between(99, 101)]
 
@@ -30,10 +34,9 @@ COMPUCRSP['fin'] = [1 if x in f else 0 for x in COMPUCRSP['sic']]
 COMPUCRSP = COMPUCRSP[COMPUCRSP.fin == 0]
 
 f2 = list(range(4900, 4949))
-
 COMPUCRSP['util'] = [1 if x in f else 0 for x in COMPUCRSP['sic']]
 COMPUCRSP = COMPUCRSP[COMPUCRSP.util == 0]
-
+COMPUCRSP = COMPUCRSP.drop(['fin','util'], axis = 1)
 #erase utilities
 #MERGE CAPIIQ
 
@@ -45,7 +48,7 @@ COMPUCRSPIQ = pd.merge(COMPUCRSP,
                          right_on = ['gvkey'], how='left')
 
 datadirectory = os.path.join(os.getcwd(), 'data')
-
+#what does this do?
 COMPUCRSPIQ.loc[COMPUCRSPIQ.enddate == 'E', 'enddate'] = 20191012
 COMPUCRSPIQ.loc[COMPUCRSPIQ.startdate == 'B', 'startdate'] = 19680101
 COMPUCRSPIQ['startdate'].fillna(19700101, inplace=True)
@@ -56,11 +59,9 @@ COMPUCRSPIQ = COMPUCRSPIQ[(COMPUCRSPIQ.datadate >= COMPUCRSPIQ.startdate) & (COM
 
 #Write to file: STARTING POINT NEXT STEPS
 
-COMPUCRSPIQ.to_csv(os.path.join(datadirectory, "MERGEDID.csv"))
+COMPUCRSPIQ.to_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"))
+COMPUCRSPIQ = pd.read_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"), index_col=0)
 
-COMPUCRSPIQ = pd.read_csv(os.path.join(datadirectory, "MERGEDID.csv"), index_col=0)
-
-SPCRNONA = LoadData.load_data_main_2()
 
 COMPUCRSPIQ_small = COMPUCRSPIQ[['gvkey','datadate']]
 COMPUCRSPIQ_small = COMPUCRSPIQ_small[COMPUCRSPIQ_small.datadate <= 20181231]
@@ -79,7 +80,7 @@ SPCRNONA['temp'] = '19600101'
 COMPUCRSPIQ_small['temp'] = pd.to_datetime(COMPUCRSPIQ_small['temp'])
 SPCRNONA['temp'] = pd.to_datetime(SPCRNONA['temp'])
 COMPUCRSPIQ_small['tempdays'] = (COMPUCRSPIQ_small['datadate']-COMPUCRSPIQ_small['temp']).dt.days
-SPCRNONA['tempdays'] = (SPCRNONA['datadate']-SPCRNONA['temp']).dt.days
+SPCRNONA['tempdays'] = (SPCRNONA['datadate'] - SPCRNONA['temp']).dt.days
 # last date on SP CR data base 20170228
 #Merge
 
@@ -112,7 +113,7 @@ COMPUCRSPIQCR = pd.merge(COMPUCRSPIQ,
 # gvkey, cusip, cik, permno, permco, LINKDT, LINKENDDT, COMPANYID (CAPIQ ID),
 #splticrm, spsdrm, spsticrm, DLR (days since last rating)
 
-COMPUCRSPIQCR = COMPUCRSPIQCR.drop(['startdate','enddate','fin','util'], axis = 1)
+COMPUCRSPIQCR = COMPUCRSPIQCR.drop(['startdate','enddate'], axis = 1)
 
 
 COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR.csv"))

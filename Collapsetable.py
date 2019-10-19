@@ -27,7 +27,7 @@ CRSPLINKY= pd.merge(CRSPLINKY,
 
 CRSPLINKY = CRSPLINKY.drop_duplicates(subset=['gvkey','LPERMNO','LPERMCO'])
 
-df.rename(columns={"A": "a", "B": "c"})
+
 CRSPLINKY = CRSPLINKY.drop(['LINKDT','LINKENDDT'], axis = 1)
 CRSPLINKY = CRSPLINKY.rename(columns={"0_x": "LINKDT", "0_y": "LINKENDDT"})
 
