@@ -116,7 +116,7 @@ COMPUCRSPIQCR = pd.merge(COMPUCRSPIQ,
 COMPUCRSPIQCR = COMPUCRSPIQCR.drop(['startdate','enddate'], axis = 1)
 
 
-COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR.csv"))
+COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR-OCT19.csv"))
 
 
 
