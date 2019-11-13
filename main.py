@@ -27,6 +27,8 @@ FUNDAMAINID = FUNDAMAINID[FUNDAMAINID.indfmt == 'INDL']
 CRSPLINK = pd.read_csv(os.path.join(datadirectory, "CRSPLINK.gz"), sep='\t')
 CAPIQID = pd.read_csv(os.path.join(datadirectory, "Capital IQ Identifier.txt"), sep='\t')
 
+CRSPM = pd.read_csv(os.path.join(datadirectory, "CRSPMONTHLY.gz"), sep='\t')
+
 SPCR = pd.read_csv(os.path.join(datadirectory, "cpstCRN.txt"), sep='\t')
 SPCR.drop(columns=['tic'])
 SPCRNONA = SPCR.drop(columns=['tic']).dropna(subset=['splticrm'])
