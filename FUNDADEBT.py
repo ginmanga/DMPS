@@ -65,8 +65,8 @@ FUNDADEBT['OTHERA_C'] = FUNDADEBT['TOTALDEBT_C'] - FUNDADEBT['SUB_C'] - FUNDADEB
                        - FUNDADEBT['CL_C'] - FUNDADEBT['SHORT_C'] - FUNDADEBT['cmp']
 
 #Redo but with new measures
-list_sum1 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C' 'BD_C', 'CL_C', 'SHORT_C', 'cmp']
-list_sum2 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C' 'BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHER_C']
+list_sum1 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C', 'BD_C', 'CL_C', 'SHORT_C', 'cmp']
+list_sum2 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C', 'BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHER_C']
 
 FUNDADEBT['CHECK_C'] = (FUNDADEBT[list_sum2].sum(axis=1))/FUNDADEBT['TOTALDEBT_C']
 FUNDADEBT['CHECK_CO'] = FUNDADEBT[list_sum1].sum(axis=1)/FUNDADEBT['TOTALDEBT_C']
@@ -75,7 +75,7 @@ FUNDADEBT['CHECK_3'] = np.where(FUNDADEBT['CHECK_2'].round(1) == 0,1,0) \
                         * np.where(FUNDADEBT['CHECK_CO'] == 1, 0, 1)
 
 # Adjustments, check sTotal_debt - sum total
-FUNDADEBT['sum_temp'] = FUNDADEBT[list_sum1 ].sum(axis=1)
+FUNDADEBT['sum_temp'] = FUNDADEBT[['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C', 'BD_C', 'CL_C', 'cmp']].sum(axis=1)
 FUNDADEBT = Functions.pct_calculator(list_sum1, 'sum_temp', 'TEMP', FUNDADEBT)
 
 FUNDADEBT['SUBNOTCONV_C'] = FUNDADEBT['SUBNOTCONV_C'] + FUNDADEBT['dd1']*FUNDADEBT['SUBNOTCONV_CTEMP']*FUNDADEBT['CHECK_3']
@@ -107,9 +107,9 @@ FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C
 
 #New percentages
 
-list_sum2 = ['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHER_C']
+list_sum2 = ['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHERA_C']
 FUNDADEBT = Functions.pct_calculator(list_sum2, 'TOTALDEBT_C', 'PCT', FUNDADEBT)
-list_sum2 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C' 'BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHER_C']
+list_sum2 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C', 'BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHERA2_C']
 FUNDADEBT = Functions.pct_calculator(list_sum2, 'TOTALDEBT_C', 'PCT', FUNDADEBT)
 
 
@@ -119,9 +119,10 @@ list_funda = ['TOTALDEBT_C', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C', 'SUBPC
               'SUBPCT_C', 'CLPCT_C', 'BDPCT_C', 'SBNPCT_C', 'SHORTPCT_C', 'CURLIAPCT_C',
               'CMPPCT_C', 'HH1_C', 'HH2_C', 'HH3_C']
 
-to_drop = ['CHECK_4', 'CHECK_C', 'CHECK_CO', 'CHECK_2', 'CHECK_3']
+to_drop = ['CHECK_4', 'CHECK_C', 'CHECK_CO', 'CHECK_2', 'CHECK_3', 'sum_temp', 'SUB_CTEMP', 'SBN_CTEMP', 'BD_CTEMP',
+           'CL_CTEMP', 'cmpTEMP', 'SUBNOTCONV_CTEMP', 'CONV_CTEMP', 'DD_CTEMP', 'DN_CTEMP']
 
-FUNDADEBT = FUNDADEBT.drop(to_drop, axis = 1)
+FUNDADEBT = FUNDADEBT.drop(to_drop, axis=1)
 
 datadirectory
 FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessedNOV.csv"))
