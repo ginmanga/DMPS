@@ -29,14 +29,14 @@ COMPUCRSP = COMPUCRSP[(COMPUCRSP.datadate >= COMPUCRSP.LINKDT) & (COMPUCRSP.data
 
 #df = df[df['closing_price'].between(99, 101)]
 
-f = list(range(6000, 6999))
-COMPUCRSP['fin'] = [1 if x in f else 0 for x in COMPUCRSP['sic']]
-COMPUCRSP = COMPUCRSP[COMPUCRSP.fin == 0]
+#f = list(range(6000, 6999))
+#COMPUCRSP['fin'] = [1 if x in f else 0 for x in COMPUCRSP['sic']]
+#COMPUCRSP = COMPUCRSP[COMPUCRSP.fin == 0]
 
-f2 = list(range(4900, 4949))
-COMPUCRSP['util'] = [1 if x in f2 else 0 for x in COMPUCRSP['sic']]
-COMPUCRSP = COMPUCRSP[COMPUCRSP.util == 0]
-COMPUCRSP = COMPUCRSP.drop(['fin','util'], axis = 1)
+#f2 = list(range(4900, 4949))
+#COMPUCRSP['util'] = [1 if x in f2 else 0 for x in COMPUCRSP['sic']]
+#COMPUCRSP = COMPUCRSP[COMPUCRSP.util == 0]
+#COMPUCRSP = COMPUCRSP.drop(['fin','util'], axis = 1)
 #erase utilities
 #MERGE CAPIIQ
 
@@ -116,8 +116,8 @@ COMPUCRSPIQCR = pd.merge(COMPUCRSPIQ,
 COMPUCRSPIQCR = COMPUCRSPIQCR.drop(['startdate','enddate'], axis = 1)
 
 
-COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR-OCT19-noutil.csv"))
+COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR-ALL.csv"))
 
 
 
-COMPUCRSPIQ_small = COMPUCRSPIQCR[['gvkey','datadate','splticrm','sic']]
+COMPUCRSPIQ_small = COMPUCRSPIQCR[['gvkey','datadate','LPERMNO']]

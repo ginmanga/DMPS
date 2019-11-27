@@ -124,13 +124,20 @@ to_drop = ['CHECK_4', 'CHECK_C', 'CHECK_CO', 'CHECK_2', 'CHECK_3', 'sum_temp', '
 
 FUNDADEBT = FUNDADEBT.drop(to_drop, axis=1)
 
-datadirectory
+to_drop = ['CHECK_4', 'CHECK_C', 'CHECK_CO', 'CHECK_2', 'CHECK_3', 'sum_temp', 'SUB_CTEMP', 'SBN_CTEMP', 'BD_CTEMP',
+           'CL_CTEMP', 'cmpTEMP', 'SUBNOTCONV_CTEMP', 'CONV_CTEMP', 'DD_CTEMP', 'DN_CTEMP']
+
+FUNDADEBT.columns.str.endswith('_fn')
+FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
+FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
+
 FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessedNOV.csv"))
 
 #Separate HHI
 
 
-
-
+del FUNDADEBT
+del FUNDACMP
+#OLDERR
 
 FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessed.csv"))
