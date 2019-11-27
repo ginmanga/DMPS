@@ -2,7 +2,7 @@
 # CRSP SIC numbers and other necessary things
 # get gvkey from link table
 #then merge crsp info to
-COMPUCRSPIQ_small = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALL.csv"), index_col=0)
+COMPUCRSPIQ_small = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLNOV27.csv"), index_col=0)
 COMPUCRSPIQ_small['datadate'] = pd.to_datetime(COMPUCRSPIQ_small['datadate'])
 
 #FUNDALIST_CRSPIDS = pd.merge(COMPUCRSPIQ_small,
@@ -49,4 +49,4 @@ FUNDALIST_CRSPIDS = pd.merge_asof(COMPUCRSPIQ_small, CRSPM, on='tempID')
 todrop = ['conm_y', 'cusip_y', 'cik_y','temp_x','tempdays_x','tempID','temp_y','tempdays_y']
 
 FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.drop(todrop, axis=1)
-FUNDALIST_CRSPIDS.to_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSNOV.csv"))
+FUNDALIST_CRSPIDS.to_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSNOV27.csv"))

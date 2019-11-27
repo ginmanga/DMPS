@@ -27,7 +27,9 @@ FUNDABS = FUNDABS2
 FUNDAP = pd.read_csv(os.path.join(datadirectory, "APWCAP5018.gz"), sep='\t')
 FUNDAP['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
 
-FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "fundamainID7019.txt.gz"), sep='\t')
+#FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "fundamainID7019.txt.gz"), sep='\t')
+FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "FUNDAMAINID5018.gz"), sep='\t')
+
 FUNDAMAINID = FUNDAMAINID[FUNDAMAINID.indfmt == 'INDL']
 
 CRSPLINK = pd.read_csv(os.path.join(datadirectory, "CRSPLINK.gz"), sep='\t')

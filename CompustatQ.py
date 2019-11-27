@@ -11,4 +11,5 @@ FUNDAQ = pd.read_csv(os.path.join(datadirectory, "fundaQ.gz"), sep='\t')
 FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'], format='%Y%m%d')
 FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
 
-COMPUCRSPIQCR = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALL.csv"))
+COMPUCRSPIQCR = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLNOV27.csv"), index_col=0)
+FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSNOV27-ALLNOV27.csv"), index_col=0)
