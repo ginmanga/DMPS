@@ -121,3 +121,69 @@ COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLNOV27.csv"))
 
 
 COMPUCRSPIQ_small = COMPUCRSPIQCR[['gvkey','datadate','LPERMNO']]
+
+
+
+#Make new variable using SICH, SIC from compustat and SICCD from CRSP
+FUNDASIC = pd.read_csv(os.path.join(datadirectory, "FUNDASICH.gz"), sep='\t') #funda with SICH and SIC
+COMPUCRSPIQCR = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLNOV27.csv"), index_col=0) #merged CRSPCOMPUCAPIQ
+FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSNOV27.csv"), index_col=0) #merged CRSPIDS
+
+COMPUCRSPIQCR['datadate'] = pd.to_datetime(COMPUCRSPIQCR['datadate'])
+FUNDALIST_CRSPIDS['datadate'] = pd.to_datetime(FUNDALIST_CRSPIDS['datadate'])
+
+#USE SICH when avaialable
+
+#Collapse FUNDASIC by sich
+
+
+#merge SICH back into FUNDASIC
+#prepare matching ID for us with asof
+FUNDASIC['temp'] = '19600101'
+FUNDASIC['temp'] = pd.to_datetime(FUNDASIC['temp'])
+FUNDASIC['datadate'] = pd.to_datetime(FUNDASIC['datadate'], format='%Y%m%d')
+FUNDASIC['tempdays'] = (FUNDASIC['datadate']-FUNDASIC['temp']).dt.days
+FUNDASIC['gvkey'] = FUNDASIC['gvkey'].apply(int)
+FUNDASIC['gvkey'] = FUNDASIC['gvkey'].apply(str)
+FUNDASIC['temp'] = '10000000'
+FUNDASIC['tempID'] = FUNDASIC['gvkey'] + FUNDASIC['temp']
+FUNDASIC['tempID'] = FUNDASIC['tempID'].apply(int)
+FUNDASIC['tempID'] = FUNDASIC['tempID'] + FUNDASIC['tempdays']
+#drop nans
+FUNDASIC_nonan = FUNDASIC.dropna(subset=['sich'])
+FUNDASIC_NEWSIC = pd.merge_asof(FUNDASIC, FUNDASIC_nonan[['gvkey','sich','tempID']], on='tempID', direction='nearest')
+# now turn sich_y into sic if gkvey_x not equal gvkey_y
+FUNDASIC_NEWSIC['sic_ch'] = np.where(FUNDASIC_NEWSIC['gvkey_x'] == FUNDASIC_NEWSIC['gvkey_y'],
+                                     FUNDASIC_NEWSIC['sich_y'], FUNDASIC_NEWSIC['sic'])
+
+FUNDASIC_NEWSIC.rename(columns={'gvkey_x': 'gvkey'}, inplace=True)
+
+#Merge new SIC to FUNDALIST_CRSPIDS create SIC first compustat then crsp, then establish FF48industry
+FUNDASIC_NEWSIC['gvkey'] = FUNDASIC['gvkey'].apply(int)
+FUNDALIST_CRSPIDS = pd.merge(FUNDALIST_CRSPIDS,
+                         FUNDASIC_NEWSIC[['gvkey','datadate','sic_ch']],
+                         left_on=['gvkey','datadate'],
+                         right_on = ['gvkey','datadate'], how='left')
+
+COMPUCRSPIQCR = pd.merge(COMPUCRSPIQCR,
+                         FUNDASIC_NEWSIC[['gvkey','datadate','sic_ch']],
+                         left_on=['gvkey','datadate'],
+                         right_on = ['gvkey','datadate'], how='left')
+
+
+
+
+FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'str'})
+FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'float'})
+FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'int'})
+FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.astype({'SICCD': 'int64'})
+FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.astype({'sic': 'int64'})
+
+#turn SIC into proper number
+f['ID'] = df['ID'].apply(lambda x: '{0:0>15}'.format(x))
+
+
+#make dictionary with fama-fench industry and set of all industries (function created to make dictionaries)
+ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
+
+ff48_dictt['4970']

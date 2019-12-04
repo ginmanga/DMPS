@@ -93,4 +93,50 @@ def collapse_list(a, x, y, header = 0):
         counter_2 += 1
     return collapsed_list
 
+def fama_french_ind(datadirectory, filename, nametosave='', option=0):
+    """Takes a text file from KFrench website and returns dictionary with sic code as key and FF industry as value"""
+    datadirectoryS = os.path.join(datadirectory, filename)
+    with open(datadirectoryS) as f:
+        lineList = f.read().splitlines()
+    lineList = [i.strip() for i in lineList]
+    onetofe = set(range(1, 49))
+    start = 0
+    long_list = []
+    for i in lineList:
+        a = i.split(' ')[0]
+        try:
+            if int(a) in onetofe:
+                short_list = []
+                short_list.append(int(a))
+                # start = 1
+        except:
+            start = 1
+        if len(a) == 0 or a == '48':
+            start = 0
+            long_list.append(short_list)
+        if start == 1:
+            short_list.append(a)
 
+    new_long_list = []
+    count = 0
+    for i in long_list:
+        new_long_list.append([i[0]])
+        for l in i[1:]:
+            if int(l.split('-')[0]) == int(l.split('-')[1]):
+                new_long_list[count].extend([int(l.split('-')[0])])
+            else:
+                new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1]))))
+        print(count)
+        count += 1
+
+    ff48_dict = {}
+    for i in new_long_list:
+        temp_list = [str(l).zfill(4) for l in i[1:]]
+
+        for j in temp_list:
+            ff48_dict.update({j: i[0]})
+    #save to json file
+    if option == 1:
+        import json
+        json.dump(ff48_dict, open(os.path.join(datadirectory, nametosave), 'w'))
+    return ff48_dict

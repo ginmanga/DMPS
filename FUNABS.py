@@ -99,3 +99,8 @@ COMPUCRSPIQCR = pd.merge(COMPUCRSPIQCR,
                    FUNDADEBT[c],
                     left_on=['gvkey','datadate'],
                     right_on = ['gvkey','datadate'], how='left')
+
+
+
+
+

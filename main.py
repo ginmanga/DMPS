@@ -35,9 +35,13 @@ FUNDAMAINID = FUNDAMAINID[FUNDAMAINID.indfmt == 'INDL']
 CRSPLINK = pd.read_csv(os.path.join(datadirectory, "CRSPLINK.gz"), sep='\t')
 CAPIQID = pd.read_csv(os.path.join(datadirectory, "Capital IQ Identifier.txt"), sep='\t')
 
-CRSPM = pd.read_csv(os.path.join(datadirectory, "CRSPMONTHLY.gz"), sep='\t')
+CRSPM = pd.read_csv(os.path.join(datadirectory, "CRSPMONTHLY5018.gz"), sep='\t')
 CRSPM['date'] = pd.to_datetime(CRSPM['date'], format='%Y%m%d')
 
 SPCR = pd.read_csv(os.path.join(datadirectory, "cpstCRN.txt"), sep='\t')
 SPCR.drop(columns=['tic'])
 SPCRNONA = SPCR.drop(columns=['tic']).dropna(subset=['splticrm'])
+
+CRSPM["COMNAM"]
+
+CRSPM.loc[CRSPM['COMNAM'] == 'A P L CORP']
