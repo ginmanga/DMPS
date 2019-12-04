@@ -203,8 +203,21 @@ FUNDALIST_CRSPIDS['sic_ch'] = FUNDALIST_CRSPIDS['sic_ch'].apply(lambda x: str(x)
 COMPUCRSPIQCR['sic_ch'] = COMPUCRSPIQCR['sic_ch'].apply(lambda x: str(x).zfill(4))
 FUNDAQ['sic_ch'] = FUNDAQ['sic_ch'].apply(lambda x: str(x).zfill(4))
 ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
-ff48_dict['3099']
+
 FUNDASIC_NEWSIC['FF48'] = FUNDASIC_NEWSIC['sic_ch'].apply(lambda x: ff48_dict[x])
+FUNDALIST_CRSPIDS['FF48'] = FUNDALIST_CRSPIDS['sic_ch'].apply(lambda x: ff48_dict[x])
+COMPUCRSPIQCR['FF48'] = COMPUCRSPIQCR['sic_ch'].apply(lambda x: ff48_dict[x])
+FUNDAQ['FF48'] = FUNDAQ['sic_ch'].apply(lambda x: ff48_dict[x])
+
+#SAVEALL
+COMPUCRSPIQCR.to_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLDEC4.csv"))
+FUNDALIST_CRSPIDS.to_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSDEC4.csv"))
+FUNDASIC_NEWSIC.to_csv(os.path.join(datadirectory, "FUNDASIC_DEC4.csv"))
+FUNDAQ.to_csv(os.path.join(datadirectory, "FUNDAQDEC4.csv"))
+
+#Make new variable using SICH, SIC from compustat and SICCD from CRSP
+FUNDASIC = pd.read_csv(os.path.join(datadirectory, "FUNDASICH.gz"), sep='\t') #funda with SICH and SIC
+
 
 #make dictionary with fama-fench industry and set of all industries (function created to make dictionaries)
 
@@ -214,6 +227,6 @@ ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
 
 ff48_dictt['4970']
 
-ff = Functions.fama_french_ind(datadirectory, "Siccodes48.txt", nametosave='', option=0)
-ff['3088']
-ff['3089']
+ff = Functions.fama_french_ind(datadirectory, "Siccodes48.txt", nametosave='FF48.txt', option=1)
+ff['9996']
+ff['3990']

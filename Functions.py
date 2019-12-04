@@ -99,7 +99,7 @@ def fama_french_ind(datadirectory, filename, nametosave='', option=0):
     with open(datadirectoryS) as f:
         lineList = f.read().splitlines()
     lineList = [i.strip() for i in lineList]
-    onetofe = set(range(1, 49))
+    onetofe = set(range(1, 50))
     start = 0
     long_list = []
     for i in lineList:
@@ -111,7 +111,7 @@ def fama_french_ind(datadirectory, filename, nametosave='', option=0):
                 # start = 1
         except:
             start = 1
-        if len(a) == 0 or a == '48':
+        if len(a) == 0 or a == '49':
             start = 0
             long_list.append(short_list)
         if start == 1:
@@ -125,9 +125,9 @@ def fama_french_ind(datadirectory, filename, nametosave='', option=0):
             if int(l.split('-')[0]) == int(l.split('-')[1]):
                 new_long_list[count].extend([int(l.split('-')[0])])
             else:
-                new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1]+1))))
+                new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1])+1)))
         count += 1
-        print(count)
+        #print(count)
 
     ff48_dict = {}
     for i in new_long_list:

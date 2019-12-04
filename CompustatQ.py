@@ -7,11 +7,9 @@
 # do it at industyr level use SIC codes Fama french 48 industy
 
 
-FUNDAQ = pd.read_csv(os.path.join(datadirectory, "fundaQ.gz"), sep='\t')
-FUNDAQ = pd.read_csv(os.path.join(datadirectory, "FUNDAQSICB2018.gz"), sep='\t')
-FUNDASIC = pd.read_csv(os.path.join(datadirectory, "FUNDASICH.gz"), sep='\t')
-FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'], format='%Y%m%d')
-#FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
+FUNDAQ = pd.read_csv(os.path.join(datadirectory, "FUNDAQDEC4.txt"), sep='\t')
 
+#FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
+#calculate sale and cash flow volatility using quarterly data
 
 
