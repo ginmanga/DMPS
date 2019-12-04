@@ -125,9 +125,9 @@ def fama_french_ind(datadirectory, filename, nametosave='', option=0):
             if int(l.split('-')[0]) == int(l.split('-')[1]):
                 new_long_list[count].extend([int(l.split('-')[0])])
             else:
-                new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1]))))
-        print(count)
+                new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1]+1))))
         count += 1
+        print(count)
 
     ff48_dict = {}
     for i in new_long_list:

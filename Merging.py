@@ -149,6 +149,18 @@ FUNDASIC['temp'] = '10000000'
 FUNDASIC['tempID'] = FUNDASIC['gvkey'] + FUNDASIC['temp']
 FUNDASIC['tempID'] = FUNDASIC['tempID'].apply(int)
 FUNDASIC['tempID'] = FUNDASIC['tempID'] + FUNDASIC['tempdays']
+
+#same for FUNDAQ
+FUNDAQ['temp'] = '19600101'
+FUNDAQ['temp'] = pd.to_datetime(FUNDAQ['temp'])
+FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'], format='%Y%m%d')
+FUNDAQ['tempdays'] = (FUNDAQ['datadate']-FUNDAQ['temp']).dt.days
+FUNDAQ['gvkey'] = FUNDAQ['gvkey'].apply(int)
+FUNDAQ['gvkey'] = FUNDAQ['gvkey'].apply(str)
+FUNDAQ['temp'] = '10000000'
+FUNDAQ['tempID'] = FUNDAQ['gvkey'] + FUNDAQ['temp']
+FUNDAQ['tempID'] = FUNDAQ['tempID'].apply(int)
+FUNDAQ['tempID'] = FUNDAQ['tempID'] + FUNDAQ['tempdays']
 #drop nans
 FUNDASIC_nonan = FUNDASIC.dropna(subset=['sich'])
 FUNDASIC_NEWSIC = pd.merge_asof(FUNDASIC, FUNDASIC_nonan[['gvkey','sich','tempID']], on='tempID', direction='nearest')
@@ -171,19 +183,37 @@ COMPUCRSPIQCR = pd.merge(COMPUCRSPIQCR,
                          right_on = ['gvkey','datadate'], how='left')
 
 
+FUNDAQ = pd.merge_asof(FUNDAQ, FUNDASIC_NEWSIC[['gvkey','sic_ch','tempID']], on='tempID', direction='nearest')
+FUNDAQ.rename(columns={'gvkey_x': 'gvkey'}, inplace=True)
+#check match
+FUNDAQ = FUNDAQ.astype({'gvkey_y': 'str'})
+FUNDAQ['check'] = np.where(FUNDAQ['gvkey'] == FUNDAQ['gvkey_y'], 1, 0)
+FUNDAQ[FUNDAQ.check==0]
 
+FUNDAQ_small = FUNDAQ[FUNDAQ.check==0]
+#delete unnecessary columns
+to_del_fundasic = ['sich_x','temp','tempdays','tempID','gvkey_y','sich_y','sicNEW']
+to_del_fundaq = ['temp','tempdays','tempID','gvkey_y']
 
-FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'str'})
-FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'float'})
-FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.astype({'sic_ch': 'int'})
-FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.astype({'SICCD': 'int64'})
-FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.astype({'sic': 'int64'})
-
-#turn SIC into proper number
-f['ID'] = df['ID'].apply(lambda x: '{0:0>15}'.format(x))
-
+FUNDASIC_NEWSIC = FUNDASIC_NEWSIC.drop(to_del_fundasic, axis=1)
+FUNDAQ = FUNDAQ.drop(to_del_fundaq, axis=1)
+### Now get Fama french industry for sic_ch
+FUNDASIC_NEWSIC['sic_ch'] = FUNDASIC_NEWSIC['sic_ch'].apply(lambda x: str(x).zfill(4))
+FUNDALIST_CRSPIDS['sic_ch'] = FUNDALIST_CRSPIDS['sic_ch'].apply(lambda x: str(x).zfill(4))
+COMPUCRSPIQCR['sic_ch'] = COMPUCRSPIQCR['sic_ch'].apply(lambda x: str(x).zfill(4))
+FUNDAQ['sic_ch'] = FUNDAQ['sic_ch'].apply(lambda x: str(x).zfill(4))
+ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
+ff48_dict['3099']
+FUNDASIC_NEWSIC['FF48'] = FUNDASIC_NEWSIC['sic_ch'].apply(lambda x: ff48_dict[x])
 
 #make dictionary with fama-fench industry and set of all industries (function created to make dictionaries)
+
+#match quarterly to fundasec_newsic
+
 ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
 
 ff48_dictt['4970']
+
+ff = Functions.fama_french_ind(datadirectory, "Siccodes48.txt", nametosave='', option=0)
+ff['3088']
+ff['3089']

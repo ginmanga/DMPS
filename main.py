@@ -5,6 +5,7 @@ import pandasql as ps
 import numpy as np
 import gzip, os, csv
 import datetime
+import Functions
 
 datadirectory = os.path.join(os.getcwd(), 'data')
 
