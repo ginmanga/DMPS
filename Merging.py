@@ -202,6 +202,7 @@ FUNDASIC_NEWSIC['sic_ch'] = FUNDASIC_NEWSIC['sic_ch'].apply(lambda x: str(x).zfi
 FUNDALIST_CRSPIDS['sic_ch'] = FUNDALIST_CRSPIDS['sic_ch'].apply(lambda x: str(x).zfill(4))
 COMPUCRSPIQCR['sic_ch'] = COMPUCRSPIQCR['sic_ch'].apply(lambda x: str(x).zfill(4))
 FUNDAQ['sic_ch'] = FUNDAQ['sic_ch'].apply(lambda x: str(x).zfill(4))
+
 ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
 
 FUNDASIC_NEWSIC['FF48'] = FUNDASIC_NEWSIC['sic_ch'].apply(lambda x: ff48_dict[x])
@@ -228,5 +229,7 @@ ff48_dict = json.load(open(os.path.join(datadirectory, 'FF48.txt')))
 ff48_dictt['4970']
 
 ff = Functions.fama_french_ind(datadirectory, "Siccodes48.txt", nametosave='FF48.txt', option=1)
+ff = Functions.fama_french_ind(datadirectory, "Siccodes30.txt", nametosave='FF30.txt', option=1)
+
 ff['9996']
 ff['3990']

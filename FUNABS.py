@@ -35,6 +35,7 @@ FUNDABS['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
 FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "fundadebtprocessedNOV.csv"), index_col=0)
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 
+
 c = ['gvkey','datadate', 'TOTALDEBT_C']
 
 FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]

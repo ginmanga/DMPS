@@ -20,6 +20,7 @@ def pct_calculator(x, y, name, df):
         df[i + name] = (df[i]/df[y])
     return df
 
+
 def write_file(path_file, filename, data, write_type):
     """Writes all data to file"""
     #first tells if it writtes or appends
@@ -48,7 +49,6 @@ def ext_fromzip(dir, filename, options=[]):
                 None
             i += 1
     return acc_list
-
 
 
 def collapse_list(a, x, y, header = 0):
@@ -93,13 +93,14 @@ def collapse_list(a, x, y, header = 0):
         counter_2 += 1
     return collapsed_list
 
-def fama_french_ind(datadirectory, filename, nametosave='', option=0):
+
+def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', option=0):
     """Takes a text file from KFrench website and returns dictionary with sic code as key and FF industry as value"""
     datadirectoryS = os.path.join(datadirectory, filename)
     with open(datadirectoryS) as f:
         lineList = f.read().splitlines()
     lineList = [i.strip() for i in lineList]
-    onetofe = set(range(1, 50))
+    onetofe = set(range(1, industries + 2))
     start = 0
     long_list = []
     for i in lineList:
@@ -140,3 +141,46 @@ def fama_french_ind(datadirectory, filename, nametosave='', option=0):
         import json
         json.dump(ff48_dict, open(os.path.join(datadirectory, nametosave), 'w'))
     return ff48_dict
+
+
+
+def winsor(data, column=[], quantiles=[0.99, 0.01]):
+    """function to winsorize"""
+    for i in column:
+        print(i)
+        data['temp1'] = data[i].quantile(quantiles[0])
+        data['temp2'] = data[i].quantile(quantiles[1])
+        new_var = i + '_cut'
+        #data[new_var] = np.where(data[i] > data['temp1'], data['temp1'], data[i])
+        data[new_var] = np.where(data[i] > data['temp1'], data['temp1'], data[i])
+        data[new_var] = np.where(data[new_var] < data['temp2'], data['temp2'], data[new_var])
+        #data[new_var] = np.where(data[i].isna, data[i], data[new_var])
+        data = data.drop('temp1', axis=1)
+        data = data.drop('temp2', axis=1)
+    return data
+
+
+def rol_vars(data, var, newname, group, group1=[], group2=[], onn='datacqtr', window=12, levels=2):
+
+    get_meth = getattr(data.groupby('gvkey').rolling(window, on=onn)[[var]], 'std')
+    c = get_meth().reset_index()
+
+
+    if levels == 2:
+        c = pd.merge(c, data[group1],
+                     left_on=group,
+                     right_on=group, how='left')
+        c = c.dropna(subset=[var])
+        get_meth = getattr(c.groupby(group2)[[var]], 'mean')
+        c = get_meth().reset_index()
+    c.rename(columns={var: newname}, inplace=True)
+    if levels == 2:
+        data = pd.merge(data, c,
+                          left_on = group2,
+                          right_on = group2, how='left')
+    if levels == 1:
+        data = pd.merge(data, c,
+                          left_on = group,
+                          right_on = group, how='left')
+    #del c
+    return data

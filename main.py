@@ -6,6 +6,7 @@ import numpy as np
 import gzip, os, csv
 import datetime
 import Functions
+import imp
 
 datadirectory = os.path.join(os.getcwd(), 'data')
 
@@ -24,6 +25,7 @@ FUNDABS2 = FUNDABS.loc[:, ~FUNDABS.columns.str.endswith('_dc')]
 FUNDABS2 = FUNDABS2.loc[:, ~FUNDABS2.columns.str.endswith('_fn')]
 FUNDABS2['datadate'] = pd.to_datetime(FUNDABS2['datadate'], format='%Y%m%d')
 FUNDABS = FUNDABS2
+del FUNDABS2
 
 FUNDAP = pd.read_csv(os.path.join(datadirectory, "APWCAP5018.gz"), sep='\t')
 FUNDAP['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
