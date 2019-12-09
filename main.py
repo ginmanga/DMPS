@@ -6,7 +6,7 @@ import numpy as np
 import gzip, os, csv
 import datetime
 import Functions
-import imp
+import importlib
 
 datadirectory = os.path.join(os.getcwd(), 'data')
 

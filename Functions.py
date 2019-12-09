@@ -160,12 +160,11 @@ def winsor(data, column=[], quantiles=[0.99, 0.01]):
     return data
 
 
-def rol_vars(data, var, newname, group, group1=[], group2=[], onn='datacqtr', window=12, levels=2):
+def rol_vars(data, var, newname, group, onn, window, levels, group1=[], group2=[]):
 
     get_meth = getattr(data.groupby('gvkey').rolling(window, on=onn)[[var]], 'std')
     c = get_meth().reset_index()
-
-
+    #print(c.shape)
     if levels == 2:
         c = pd.merge(c, data[group1],
                      left_on=group,
@@ -174,6 +173,7 @@ def rol_vars(data, var, newname, group, group1=[], group2=[], onn='datacqtr', wi
         get_meth = getattr(c.groupby(group2)[[var]], 'mean')
         c = get_meth().reset_index()
     c.rename(columns={var: newname}, inplace=True)
+    #print(c.shape)
     if levels == 2:
         data = pd.merge(data, c,
                           left_on = group2,
@@ -182,5 +182,37 @@ def rol_vars(data, var, newname, group, group1=[], group2=[], onn='datacqtr', wi
         data = pd.merge(data, c,
                           left_on = group,
                           right_on = group, how='left')
+    #print(data.shape)
     #del c
-    return data
+    return data, c
+
+
+def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backward'):
+    if key2 == 0:
+        key2 = key1
+    if date2 == 0:
+        date2 = date1
+    data1['temp'] = '19400101'
+    data2['temp'] = '19400101'
+    data1['temp'] = pd.to_datetime(data1['temp'])
+    data2['temp'] = pd.to_datetime(data2['temp'])
+    data1['tempdays'] = (data1[date1] - data1['temp']).dt.days
+    data2['tempdays'] = (data2[date2] - data2['temp']).dt.days
+
+    data1[key1] = data1[key1].apply(int)
+    data1[key1] = data1[key1].apply(str)
+    data2[key2] = data2[key2].apply(int)
+    data2[key2] = data2[key2].apply(str)
+    data1['temp'] = '10000000'
+    data2['temp'] = '10000000'
+    data1['tempID'] = data1[key1] + data1['temp']
+    data2['tempID'] = data2[key2] + data2['temp']
+    data1['tempID'] = data1[key1].apply(int)
+    data2['tempID'] = data2[key2].apply(int)
+    data1['tempID'] = data1['tempID'] + data1['tempdays']
+    data2['tempID'] = data2['tempID'] + data2['tempdays']
+
+    data1 = data1.sort_values(by=['tempID'])
+    data2 = data2.sort_values(by=['tempID'])
+
+    data1 = pd.merge_asof(data1, data2, on='tempID', direction = direction)

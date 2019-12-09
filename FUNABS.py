@@ -30,18 +30,17 @@ PRSTKC purchase of common and preferred stock
 #from debt get TOTALDEBT SUB SBN BD CL SHORT CHECK HH1 HH2
 
 
-FUNDABS = pd.read_csv(os.path.join(datadirectory, "fundamainBS7018.gz"), sep='\t')
+#FUNDABS = pd.read_csv(os.path.join(datadirectory, "fundamainBS7018.gz"), sep='\t')
 FUNDABS['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
-FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "fundadebtprocessedNOV.csv"), index_col=0)
+FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedNOV.gz"), index_col=0)
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 
 
 c = ['gvkey','datadate', 'TOTALDEBT_C']
 
-FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
-FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
+#FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
+#FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
 
-FUNDADEBT.dtypes
 
 FUNDABS = pd.merge(FUNDABS,
                    FUNDADEBT[c],
@@ -49,7 +48,37 @@ FUNDABS = pd.merge(FUNDABS,
                    right_on = ['gvkey','datadate'],
                    how='left')
 
+#get sic_ch and FF48
+FUNDASIC = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDASIC_DEC4.gz"), index_col=0)
+FUNDASIC['datadate'] = pd.to_datetime(FUNDASIC['datadate'])
 
+FUNDABS = pd.merge(FUNDABS,
+                   FUNDASIC[['gvkey','datadate','sic_ch', 'FF48']],
+                   left_on=['gvkey','datadate'],
+                   right_on = ['gvkey','datadate'],
+                   how='left')
+
+#Erase financials and utilities
+f2 = list(range(4900, 4949)) #delete utilities
+f3 = list(range(6000, 6999)) #delete utilities
+FUNDABS['util'] = [1 if x in f2 else 0 for x in FUNDABS['sic_ch']]
+FUNDABS['fin'] = [1 if x in f3 else 0 for x in FUNDABS['sic_ch']]
+FUNDABS = FUNDABS[FUNDABS.util == 0]
+FUNDABS = FUNDABS[FUNDABS.fin == 0]
+FUNDABS = FUNDABS.drop(columns=['util','fin'])
+# Calculate STD of sales and earninings
+FUNDABS['PROF'] = FUNDABS['oibdp']/FUNDABS['at']
+FUNDABS['SALE'] = FUNDABS['sale']/FUNDABS['at']
+list_variables_WINSOR = ['PROF','SALE']
+FUNDABS = Functions.winsor(FUNDABS, column = list_variables_WINSOR)
+
+FUNDABS = Functions.rol_vars(FUNDABS, 'SALE_cut', 'sale_std_ff48_4', group=['gvkey', 'datadate'], onn='datadate',
+                    window = 4, levels=2, group1 = ['gvkey','datadate','fyear','FF48'], group2=['FF48', 'fyear'])
+
+#FUNDABS = Functions.rol_vars(FUNDABS, 'SALE_cut', 'sale_std_ff48_4_2', group=['gvkey', 'fyear'], onn='fyear',
+                   # window = 4, levels=2, group1 = ['gvkey','fyear','FF48'], group2=['FF48', 'fyear'])
+
+#FUNDABS = FUNDABS.drop(columns=['sale_std_ff48_4_2 '])
 
 c_bs= ['gvkey','datadate', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc', 'oibdp',
        'dvc','dvt','che','ppent','capx','xsga','xrd','ceq', 'TOTALDEBT_C', 'HHI','HHI2',
@@ -92,16 +121,75 @@ BS1DF['BLEV'] = BS1DF['TOTALDEBT_C']/BS1DF['at']
 list_variables = ['MVEquity','MVBook', 'PROF', 'DIVP','CASH', 'TANG', 'CAPEX', 'ADVERT', 'RD', 'MLEV', 'BLEV']
 
 
-BS1DF.to_csv(os.path.join(datadirectory, "BSprocessedNOV27.csv"), index=False)
+
 
 #for later: product uniqueness, CF volatility, asset maturity
 
-COMPUCRSPIQCR = pd.merge(COMPUCRSPIQCR,
-                   FUNDADEBT[c],
+#Winsorize, add sic_ch and FF48, calculate standard deviation of sales and earnings to at usuing annual data
+list_variables_WINSOR = ['MVBook', 'PROF','CASH', 'TANG', 'CAPEX', 'ADVERT', 'RD', 'MLEV', 'BLEV']
+BS1DF = Functions.winsor(BS1DF, column = list_variables_WINSOR)
+
+#Add and remove variables only the needed ones
+#delete original ratios and rename the cuts
+list_variables_WINSOR = ['MVBook', 'PROF','CASH', 'TANG', 'CAPEX', 'ADVERT', 'RD', 'MLEV', 'BLEV']
+BS1DF = BS1DF.drop(list_variables_WINSOR, axis=1)
+list_variables_re = [i + '_cut' for i in list_variables_WINSOR]
+for i in list_variables_re:
+    BS1DF.rename(columns={i: i.replace('_cut','')}, inplace=True)
+
+
+
+#Add volatility variables
+#First add quartelry ones to FUNDABS, then add them to BS1DF
+#FUNDAQ.to_csv(os.path.join(datadirectory, "FUNDAQDEC8STD.csv.gz"), index=False, compression='gzip')
+FUNDAQ = pd.read_csv(os.path.join(datadirectory,'processed', "FUNDAQDEC8STD.gz"), index_col=0)
+FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'])
+
+to_keep = ['gvkey','datadate','sale_std_12','sale_std_9','sale_std_ff48_12','sale_std_ff48_9',
+           'income_std_12','income_std_9']
+FUNDABS = pd.merge(FUNDABS,
+                   FUNDAQ[to_keep],
                     left_on=['gvkey','datadate'],
                     right_on = ['gvkey','datadate'], how='left')
 
 
 
+#Calculate age using all compustat
+FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
+a = FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
+a['counts'] = a['counts'] + 1
+FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
+ce = FUNDABS.join(a)
+ce.rename(columns={'counts':'AGE'}, inplace=True)
+
+to_keep = ['gvkey','datadate','sale_std_12','sale_std_9','sale_std_ff48_12','sale_std_ff48_9',
+           'income_std_12','income_std_9','FF48','sic_ch']
+BS1DF = pd.merge(BS1DF,
+                FUNDABS[to_keep],
+                left_on=['gvkey','datadate'],
+                right_on = ['gvkey','datadate'], how='left')
 
 
+BS1DF = pd.merge(BS1DF,
+                ce[['gvkey','datadate','AGE']],
+                left_on=['gvkey','datadate'],
+                right_on = ['gvkey','datadate'], how='left')
+
+
+#Translate quarter into date and match back to BS1DF
+c['datadate'] = c['datacqtr'].str.replace(r'(\d+)(Q\d)', r'\1-\2')
+c['datadate1'] = pd.PeriodIndex(c['datadate'], freq='Q').to_timestamp()
+c['datadate1'] = pd.to_datetime(c['datadate'])
+
+#MATCH USING CLOSEST
+
+BS1DF = BS1DF.drop(columns=['temp','tempdays'])
+
+BS1DF =  Functions.match_closest(BS1DF, c[['FF48','datadate1','sale_std_ff48_12']], 'FF48', 'datadate',
+                                 key2=0, date2='datadate1', direction='nearest')
+
+BS1DF.to_csv(os.path.join(datadirectory, "BSprocessedNOV27.csv"), index=False)
+
+#Add crsp EXCH and nation
+FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDALIST_CRSPIDSDEC4.gz"), index_col=0)
+FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
