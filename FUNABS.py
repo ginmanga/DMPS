@@ -31,7 +31,9 @@ PRSTKC purchase of common and preferred stock
 
 
 #FUNDABS = pd.read_csv(os.path.join(datadirectory, "fundamainBS7018.gz"), sep='\t')
-FUNDABS['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
+#FUNDABS['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
+
+
 FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedNOV.gz"), index_col=0)
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 
@@ -72,7 +74,7 @@ FUNDABS['SALE'] = FUNDABS['sale']/FUNDABS['at']
 list_variables_WINSOR = ['PROF','SALE']
 FUNDABS = Functions.winsor(FUNDABS, column = list_variables_WINSOR)
 
-FUNDABS = Functions.rol_vars(FUNDABS, 'SALE_cut', 'sale_std_ff48_4', group=['gvkey', 'datadate'], onn='datadate',
+FUNDABS, c = Functions.rol_vars(FUNDABS, 'SALE_cut', 'sale_std_ff48_4', group=['gvkey', 'datadate'], onn='datadate',
                     window = 4, levels=2, group1 = ['gvkey','datadate','fyear','FF48'], group2=['FF48', 'fyear'])
 
 #FUNDABS = Functions.rol_vars(FUNDABS, 'SALE_cut', 'sale_std_ff48_4_2', group=['gvkey', 'fyear'], onn='fyear',
@@ -85,7 +87,7 @@ c_bs= ['gvkey','datadate', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc
        'SUBPERCENT', 'CLPERCENT','BDPERCENT','SBNPERCENT','SHORTPERCENT', 'CURLIAPERCENT',
        'CHECK']
 
-c_bs= ['gvkey','datadate', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc', 'oibdp',
+c_bs= ['gvkey','datadate', 'fyear', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc', 'oibdp',
        'dvc','dvt','che','ppent','capx','xsga','xrd','ceq', 'TOTALDEBT_C']
 #Replace missing with 0 or remove
 list_replace = ['ap','cshfd', 'pstkl', 'txditc', 'oibdp',
@@ -105,18 +107,22 @@ for i in list_remove:
 BS1DF['MVEquity'] = BS1DF['prcc_f']*BS1DF['cshfd']
 BS1DF['MVBook'] = (BS1DF['MVEquity']+BS1DF['TOTALDEBT_C'] -
                    BS1DF['pstkl'] - BS1DF['txditc'])/BS1DF['at']
-BS1DF['PROF'] = BS1DF['oibdp']/BS1DF['at'] #profitability
-
 BS1DF['DIVP'] = np.where(BS1DF['dvc'] > 0, 1, 0) #dividend payer
+BS1DF['MLEV'] = BS1DF['TOTALDEBT_C']/(BS1DF['TOTALDEBT_C'] + BS1DF['MVEquity']) #tangf
+
+
+BS1DF['PROF'] = BS1DF['oibdp']/BS1DF['at'] #profitability
 BS1DF['CASH'] = BS1DF['che']/BS1DF['at']
 BS1DF['TANG'] = BS1DF['ppent']/BS1DF['at'] #tangf
 BS1DF['CAPEX'] =  BS1DF['capx']/BS1DF['at']
 BS1DF['ADVERT'] = BS1DF['xsga']/BS1DF['at']
 BS1DF['RD'] = BS1DF['xrd']/BS1DF['at']
 BS1DF['AP'] = BS1DF['ap']/BS1DF['at']
-
-BS1DF['MLEV'] = BS1DF['TOTALDEBT_C']/(BS1DF['TOTALDEBT_C'] + BS1DF['MVEquity']) #tangf
 BS1DF['BLEV'] = BS1DF['TOTALDEBT_C']/BS1DF['at']
+
+ratios = ['oibdp','che','ppent','capx','xsga','xrd','ap','TOTALDEBT_C']
+names = ['PROF','CASH','TANG','CAPEX','ADVERT','RD','AP','BLEV']
+BS1DF = Functions.fin_ratio(BS1DF, ratios, names=[], 'at')
 
 list_variables = ['MVEquity','MVBook', 'PROF', 'DIVP','CASH', 'TANG', 'CAPEX', 'ADVERT', 'RD', 'MLEV', 'BLEV']
 
@@ -142,7 +148,7 @@ for i in list_variables_re:
 #Add volatility variables
 #First add quartelry ones to FUNDABS, then add them to BS1DF
 #FUNDAQ.to_csv(os.path.join(datadirectory, "FUNDAQDEC8STD.csv.gz"), index=False, compression='gzip')
-FUNDAQ = pd.read_csv(os.path.join(datadirectory,'processed', "FUNDAQDEC8STD.gz"), index_col=0)
+FUNDAQ = pd.read_csv(os.path.join(datadirectory,'processed', "FUNDAQDEC8STD.gz"))
 FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'])
 
 to_keep = ['gvkey','datadate','sale_std_12','sale_std_9','sale_std_ff48_12','sale_std_ff48_9',
@@ -155,10 +161,9 @@ FUNDABS = pd.merge(FUNDABS,
 
 
 #Calculate age using all compustat
-FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
 a = FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
 a['counts'] = a['counts'] + 1
-FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
+#FUNDABS.groupby(['gvkey']).cumcount().reset_index(name='counts')
 ce = FUNDABS.join(a)
 ce.rename(columns={'counts':'AGE'}, inplace=True)
 
@@ -175,21 +180,28 @@ BS1DF = pd.merge(BS1DF,
                 left_on=['gvkey','datadate'],
                 right_on = ['gvkey','datadate'], how='left')
 
+BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-temp.csv"), index=False)
 
+BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF-temp.csv"))
+BS1DF['datadate'] = pd.to_datetime(BS1DF['datadate'])
 #Translate quarter into date and match back to BS1DF
+c = pd.read_csv(os.path.join(datadirectory, "FF48SALE12.gz"))
 c['datadate'] = c['datacqtr'].str.replace(r'(\d+)(Q\d)', r'\1-\2')
-c['datadate1'] = pd.PeriodIndex(c['datadate'], freq='Q').to_timestamp()
-c['datadate1'] = pd.to_datetime(c['datadate'])
+#c['datadate'] = pd.PeriodIndex(c['datadate'], freq='Q').to_timestamp()
+c['datadate'] = pd.to_datetime(c['datadate'])
 
 #MATCH USING CLOSEST
 
-BS1DF = BS1DF.drop(columns=['temp','tempdays'])
+#BS1DF = BS1DF.drop(columns=['temp_x','tempdays_x', 'temp_y','tempdays_y'])
+#BS1DF.rename(columns={'datadate_x': 'datadate'}, inplace=True)
+#BS1DF.rename(columns={'FF48': 'FF48'}, inplace=True)
+#BS1DF_small = BS1DF[BS1DF.fyear < 1980]
+cc = c[['FF48','datadate','sale_std_ff48_12']]
+BS1DF =  Functions.match_closest(BS1DF, cc, 'FF48', 'datadate', direction='nearest')
+BS1DF = BS1DF.sort_values(by=['gvkey','datadate'])
 
-BS1DF =  Functions.match_closest(BS1DF, c[['FF48','datadate1','sale_std_ff48_12']], 'FF48', 'datadate',
-                                 key2=0, date2='datadate1', direction='nearest')
-
-BS1DF.to_csv(os.path.join(datadirectory, "BSprocessedNOV27.csv"), index=False)
-
+#BS1DF.to_csv(os.path.join(datadirectory, "BSprocessedNOV27.csv"), index=False)
+def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backward'):
 #Add crsp EXCH and nation
 FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDALIST_CRSPIDSDEC4.gz"), index_col=0)
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])

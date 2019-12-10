@@ -10,7 +10,7 @@ import importlib
 
 datadirectory = os.path.join(os.getcwd(), 'data')
 
-
+importlib.reload(Functions)
 
 FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "FUNDADEBT19502018.gz"), sep='\t')
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'], format='%Y%m%d')

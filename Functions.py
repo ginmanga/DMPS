@@ -33,13 +33,12 @@ def write_file(path_file, filename, data, write_type):
 
 
 def ext_fromzip(dir, filename, options=[]):
+    """What does this do?"""
     acc_list = []
     with gzip.open(os.path.join(dir, filename), 'rt', encoding="utf8") as f:
         i = 0
         for line in f:
             listy = line.strip('\n').split('\t')
-            # print(listy)
-            # print(listy[1], listy[5])
             if i == 0:
                 acc_list.append(listy)
             try:
@@ -192,6 +191,7 @@ def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backwar
         key2 = key1
     if date2 == 0:
         date2 = date1
+    print(key1, key2, date1, date2)
     data1['temp'] = '19400101'
     data2['temp'] = '19400101'
     data1['temp'] = pd.to_datetime(data1['temp'])
@@ -207,12 +207,23 @@ def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backwar
     data2['temp'] = '10000000'
     data1['tempID'] = data1[key1] + data1['temp']
     data2['tempID'] = data2[key2] + data2['temp']
-    data1['tempID'] = data1[key1].apply(int)
-    data2['tempID'] = data2[key2].apply(int)
+
+    data1['tempID'] = data1['tempID'].apply(int)
+    data2['tempID'] = data2['tempID'].apply(int)
     data1['tempID'] = data1['tempID'] + data1['tempdays']
     data2['tempID'] = data2['tempID'] + data2['tempdays']
 
     data1 = data1.sort_values(by=['tempID'])
     data2 = data2.sort_values(by=['tempID'])
+    data1 = data1.drop(columns=['temp', 'tempdays'])
+    data2 = data2.drop(columns=['temp', 'tempdays', key2, date2])
 
-    data1 = pd.merge_asof(data1, data2, on='tempID', direction = direction)
+    data1 = pd.merge_asof(data1, data2, on=['tempID'], direction = direction)
+    data1 = data1.drop(columns=['tempID'])
+    return data1
+
+def fin_ratio(data, ratios, names=[], denominator):
+    "takes data, a list of variables, names and a denomiator to calculate ratios"
+    for index, elem in ratios:
+        data[names[index]] = data[elem]/data[denominator]
+    return data
