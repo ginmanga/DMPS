@@ -16,6 +16,9 @@ FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "FUNDADEBT19502018.gz"), sep
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'], format='%Y%m%d')
 FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
 
+FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
+FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
+
 FUNDACMP = pd.read_csv(os.path.join(datadirectory, "fundaCMP7019.gz"), sep='\t')
 FUNDACMP = FUNDACMP[['gvkey' ,'datadate' ,'cmp']].dropna(subset=['cmp'])
 FUNDACMP['datadate'] = pd.to_datetime(FUNDACMP['datadate'], format='%Y%m%d')

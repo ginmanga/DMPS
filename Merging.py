@@ -25,19 +25,6 @@ COMPUCRSP = COMPUCRSP.dropna(subset=['LINKENDDT'])
 COMPUCRSP = COMPUCRSP.astype({'datadate': 'int64', 'LINKDT':'int64', 'LINKENDDT':'int64'})
 COMPUCRSP = COMPUCRSP[(COMPUCRSP.datadate >= COMPUCRSP.LINKDT) & (COMPUCRSP.datadate <= COMPUCRSP.LINKENDDT)]
 
-#COMPUCRSP_T = COMPUCRSP[(COMPUCRSP.sic >= 7000) & (COMPUCRSP.sic < 6000)].index
-
-#df = df[df['closing_price'].between(99, 101)]
-
-#f = list(range(6000, 6999))
-#COMPUCRSP['fin'] = [1 if x in f else 0 for x in COMPUCRSP['sic']]
-#COMPUCRSP = COMPUCRSP[COMPUCRSP.fin == 0]
-
-#f2 = list(range(4900, 4949))
-#COMPUCRSP['util'] = [1 if x in f2 else 0 for x in COMPUCRSP['sic']]
-#COMPUCRSP = COMPUCRSP[COMPUCRSP.util == 0]
-#COMPUCRSP = COMPUCRSP.drop(['fin','util'], axis = 1)
-#erase utilities
 #MERGE CAPIIQ
 
 ###MERGED####
@@ -59,8 +46,8 @@ COMPUCRSPIQ = COMPUCRSPIQ[(COMPUCRSPIQ.datadate >= COMPUCRSPIQ.startdate) & (COM
 
 #Write to file: STARTING POINT NEXT STEPS
 
-COMPUCRSPIQ.to_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"))
-COMPUCRSPIQ = pd.read_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"), index_col=0)
+#COMPUCRSPIQ.to_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"))
+#COMPUCRSPIQ = pd.read_csv(os.path.join(datadirectory, "MERGEDI-DOCT19.csv"), index_col=0)
 
 
 COMPUCRSPIQ_small = COMPUCRSPIQ[['gvkey','datadate']]
@@ -128,7 +115,6 @@ COMPUCRSPIQ_small = COMPUCRSPIQCR[['gvkey','datadate','LPERMNO']]
 FUNDASIC = pd.read_csv(os.path.join(datadirectory, "FUNDASICH.gz"), sep='\t') #funda with SICH and SIC
 COMPUCRSPIQCR = pd.read_csv(os.path.join(datadirectory, "MERGEDIDCR-ALLNOV27.csv"), index_col=0) #merged CRSPCOMPUCAPIQ
 FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, "FUNDALIST_CRSPIDSNOV27.csv"), index_col=0) #merged CRSPIDS
-
 COMPUCRSPIQCR['datadate'] = pd.to_datetime(COMPUCRSPIQCR['datadate'])
 FUNDALIST_CRSPIDS['datadate'] = pd.to_datetime(FUNDALIST_CRSPIDS['datadate'])
 

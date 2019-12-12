@@ -222,8 +222,39 @@ def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backwar
     data1 = data1.drop(columns=['tempID'])
     return data1
 
-def fin_ratio(data, ratios, names=[], denominator):
+def fin_ratio(data, ratios, denominator, names=[]):
     "takes data, a list of variables, names and a denomiator to calculate ratios"
-    for index, elem in ratios:
+    for index, elem in enumerate(ratios):
         data[names[index]] = data[elem]/data[denominator]
     return data
+
+
+def rating_grps(data):
+    ratings = ['AAA+', 'AAA', 'AAA-', 'AA+', 'AA', 'AA-', 'A+', 'A', 'A-', 'A-', 'BBB+', 'BBB', 'BBB-',
+               'BB+', 'BB', 'BB-', 'B+', 'B', 'B-', 'CCC+', 'CCC', 'CCC-', 'CC+', 'CC', 'CC-', 'C']
+    ig = ['AAA+', 'AAA', 'AAA-', 'AA+', 'AA', 'AA-', 'A+', 'A', 'A-', 'BBB+', 'BBB', 'BBB-']
+    hig = ['AAA+', 'AAA', 'AAA-', 'AA+', 'AA', 'AA-']
+    lig = ['A+', 'A', 'A-', 'A-''BBB+', 'BBB', 'BBB-']
+    hjunk = ['BB+', 'BB', 'BB-']
+    lj = ['B+', 'B', 'B-', 'CCC+', 'CCC', 'CCC-', 'CC+', 'CC', 'CC-', 'C']
+    junk = ['BB+', 'BB', 'BB-', 'B+', 'B', 'B-', 'CCC+', 'CCC', 'CCC-', 'CC+', 'CC', 'CC-', 'C']
+    D = ['D', 'SD']
+    rated = ['rated', 'INVGRADE', 'JUNK', 'HJUNK', 'LJUNK', 'HIG', 'LIG', 'D']
+
+    AAA = ['AAA+', 'AAA', 'AAA-']
+    AA = ['AA+', 'AA', 'AA-']
+    A = ['A+', 'A', 'A-']
+    BBB = ['BBB+', 'BBB', 'BBB-']
+    BB = ['BB+', 'BB', 'BB-']
+    B = ['B+', 'B', 'B-']
+    C = ['CCC+', 'CCC', 'CCC-', 'CC+', 'CC', 'CC-', 'C']
+    groups = [ratings, ig, hig, lig, junk, hjunk, lj, AAA, AA, A, BBB, BB, B, C, D]
+    names = ['RATED', 'INVGRADE', 'HIG', 'LIG', 'JUNK', 'HJUNK', 'LJUNK', 'AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'C', 'D']
+
+    for index, elem in enumerate(names):
+        print(elem)
+        print(index)
+        print(groups[index])
+        data[elem] = [1 if x in groups[index] else 0 for x in data['splticrm']]
+    return data
+

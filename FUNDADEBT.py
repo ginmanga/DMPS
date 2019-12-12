@@ -7,6 +7,8 @@
 # CL = CL
 # CMP = CMP
 #short = dlc-dd1
+
+#Change to reculaculate HH1 indexes
 import Functions
 datadirectory = os.path.join(os.getcwd(), 'data')
 
@@ -15,10 +17,16 @@ FUNDADEBT = pd.merge(FUNDADEBT,
                     left_on=['gvkey','datadate'],
                     right_on = ['gvkey','datadate'], how='left')
 
-list_replace =['dltt','cmp','dcvsub','ds','dd','dn','dlto','dlc','dd1','dclo','dcvt','dltp']
+#list_replace = ['dltt','cmp','dcvsub','ds','dd','dn','dlto','dlc','dd1','dclo','dcvt','dltp']
+list_replace = ['cmp','dltp']
+list_drop = ['cmp','dltp']
+
 for i in list_replace:
     FUNDADEBT[i].fillna(0, inplace=True)
 
+
+
+# handle situations where dltt = 0, but dd1 > 0
 FUNDADEBT['TOTALDEBT_C'] = FUNDADEBT['dltt'] + FUNDADEBT['dlc']
 FUNDADEBT['SUB_C'] = FUNDADEBT['dcvsub'] + FUNDADEBT['ds']
 FUNDADEBT['SBN_C'] = FUNDADEBT['dd'] + FUNDADEBT['dn'] + FUNDADEBT['dcvt'] - FUNDADEBT['dcvsub']
@@ -31,6 +39,7 @@ FUNDADEBT['OTHER_C'] = FUNDADEBT['TOTALDEBT_C'] - FUNDADEBT['SUB_C'] - FUNDADEBT
 FUNDADEBT['BDB_C'] = FUNDADEBT['BD_C'] + FUNDADEBT['SHORT_C']
 
 #NEW
+
 FUNDADEBT['SUBNOTCONV_C'] = FUNDADEBT['ds']
 FUNDADEBT['SUBCONV_C'] = FUNDADEBT['dcvsub']
 FUNDADEBT['CONV_C'] = FUNDADEBT['dcvt'] - FUNDADEBT['dcvsub']
@@ -42,11 +51,63 @@ list_sum1 = ['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp']
 list_sum2 = ['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp', 'OTHER_C']
 
 
+#FIX THIS
+#############
+#############
 FUNDADEBT['CHECK_C'] = (FUNDADEBT[list_sum2].sum(axis=1))/FUNDADEBT['TOTALDEBT_C']
 FUNDADEBT['CHECK_CO'] = FUNDADEBT[list_sum1].sum(axis=1)/FUNDADEBT['TOTALDEBT_C']
 FUNDADEBT['CHECK_2'] = FUNDADEBT[list_sum1].sum(axis=1) - FUNDADEBT['TOTALDEBT_C'] + FUNDADEBT['dd1']
+
+###########
+###########
+
 FUNDADEBT['CHECK_3'] = np.where(FUNDADEBT['CHECK_2'].round(1) == 0,1,0) \
                         * np.where(FUNDADEBT['CHECK_CO'] == 1, 0, 1)
+
+
+
+
+
+
+FUNDABSCHECK['CHECK_DEBT'] = FUNDABSCHECK['dd'] + FUNDABSCHECK['dn'] + FUNDABSCHECK['dcvt'] + \
+                          FUNDABSCHECK['dlto'] + FUNDABSCHECK['ds'] + FUNDABSCHECK['dclo']
+
+FUNDABSCHECK['CCC'] = FUNDABSCHECK['dltt'] - FUNDABSCHECK['CHECK_DEBT']
+FUNDABSCHECK['PCCC'] = (FUNDABSCHECK['dltt'] - FUNDABSCHECK['CHECK_DEBT'])/FUNDABSCHECK['dltt']
+
+
+FUNDABSCHECK['NCHECK'] = np.where((FUNDABSCHECK['dltt'] == 0) & (FUNDABSCHECK['dd1'] > 0), 1, 0)
+FUNDABSCHECK['NP_A'] = np.where((FUNDABSCHECK['CCC'] >= -0.001001) & (FUNDABSCHECK['CCC'] <= 0.001001), 1, 0)
+FUNDABSCHECK['NP_OVER'] = np.where((FUNDABSCHECK['CCC'] > 0.001001), 1, 0)
+#FUNDABSCHECK['NP_UNDER'] = np.where((FUNDABSCHECK['CCC'] < -0.001001), 1, 0)
+
+FUNDABSCHECK['rcc'] = np.where((FUNDABSCHECK['NP_OVER'] == 1), FUNDABSCHECK['CCC'] - FUNDABSCHECK['dd1'],
+                               FUNDABSCHECK['CCC'] + FUNDABSCHECK['dd1'])
+
+FUNDABSCHECK['C_A'] = np.where((FUNDABSCHECK['rcc'] >= -0.00101)
+                                       & (FUNDABSCHECK['rcc'] <= 0.00101), 1, 0)
+
+FUNDABSCHECK['last_1'] = FUNDABSCHECK['CCC']/ FUNDABSCHECK['dltt']
+FUNDABSCHECK['keep'] = np.where((FUNDABSCHECK['last_1'] >= -0.1)
+                                       & (FUNDABSCHECK['last_1'] <= 0.1), 1, 0)
+
+
+FUNDABSCHECK['TOKEEP'] = np.where((FUNDABSCHECK['NP_A'] == 1) | (FUNDABSCHECK['C_A'] == 1)|(FUNDABSCHECK['keep'] == 1)
+                                  , 1, 0)
+FUNDABSCHECK['TOKEEPF'] = np.where((FUNDABSCHECK['TOKEEP'] == 1)
+                                       & (FUNDABSCHECK['NCHECK'] == 0), 1, 0)
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Adjustments, check sTotal_debt - sum total
 FUNDADEBT['sum_temp'] = FUNDADEBT[['SUB_C','SBN_C','BD_C', 'CL_C', 'cmp']].sum(axis=1)
@@ -99,11 +160,25 @@ FUNDADEBT['OTHERA2_C'] = FUNDADEBT['TOTALDEBT_C'] - FUNDADEBT['SUBNOTCONV_C'] - 
 #Calculate percentages#
 #######################
 #FUNDADEBT = Functions.pct_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'cmp','OTHERA_C'], 'TOTALDEBT_C', 'PCT', FUNDADEBT)
-FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp','OTHERA_C'], 'TOTALDEBT_C', 'HH1_C', FUNDADEBT)
-FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'OTHERA_C'], 'TOTALDEBT_C', 'HH2_C', FUNDADEBT)
-FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BDB_C', 'CL_C', 'OTHERA_C'], 'TOTALDEBT_C', 'HH3_C', FUNDADEBT)
-FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C',
-                                      'OTHERA2_C'],'TOTALDEBT_C', 'HH4_C', FUNDADEBT)
+#FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'cmp','OTHERA_C'], 'TOTALDEBT_C', 'HH1_C', FUNDADEBT)
+#FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C', 'OTHERA_C'], 'TOTALDEBT_C', 'HH2_C', FUNDADEBT)
+#FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BDB_C', 'CL_C', 'OTHERA_C'], 'TOTALDEBT_C', 'HH3_C', FUNDADEBT)
+#FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C',
+                                      #'OTHERA2_C'],'TOTALDEBT_C', 'HH4_C', FUNDADEBT)
+
+
+FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C', 'HH1', FUNDADEBT)
+FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C',],
+                                     'TOTALDEBT_C', 'HH2', FUNDADEBT)
+
+FUNDADEBT['TOTALDEBT_C_2'] = FUNDADEBT['SUBNOTCONV_C'] + FUNDADEBT['SUBCONV_C'] +\
+                         FUNDADEBT['CONV_C'] + FUNDADEBT['DD_C'] + FUNDADEBT['DN_C'] + FUNDADEBT['BD_C'] +\
+                         FUNDADEBT['CL_C'] + FUNDADEBT['SHORT_C']+  FUNDADEBT['cmp']
+
+
+FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_2', 'HH1B', FUNDADEBT)
+FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C',],
+                                     'TOTALDEBT_C_2', 'HH2B', FUNDADEBT)
 
 #New percentages
 
@@ -132,10 +207,31 @@ FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
 FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
 
 FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessedNOV.csv"))
-
+FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "collapsedlink.csv"), index_col=0)
 #Separate HHI
+# Reliance on one debt type, how to do this
+#>10%
 
+FUNDADEBTC = pd.read_csv(os.path.join(datadirectory, "FUNDADEBT19502018.gz"), sep='\t')
+FUNDADEBTC['datadate'] = pd.to_datetime(FUNDADEBTC['datadate'], format='%Y%m%d')
+FUNDADEBTC = FUNDADEBTC[FUNDADEBTC.indfmt == 'INDL']
+FUNDADEBT_SMALL = FUNDADEBTC[FUNDADEBTC.fyear>=1969]
+FUNDADEBT = FUNDADEBT.drop(to_drop, axis=1)
 
+FUNDADEBT_SMALL['D1'] = FUNDADEBT_SMALL['dd1']
+FUNDADEBT['CHECK_DEBT'] = FUNDADEBT['dd'] + FUNDADEBT['dn'] + FUNDADEBT['dcvt'] + \
+                          FUNDADEBT['dlto'] + FUNDADEBT['ds'] + FUNDADEBT['dclo']
+
+FUNDADEBT['CCC'] = FUNDADEBT['dltt'] - FUNDADEBT['CHECK_DEBT']
+1.433
+0.828
+0.538
+0.475
+
+FUNDADEBT['dcvsub'] + FUNDADEBT['ds']
+FUNDADEBT['SBN_C'] = FUNDADEBT['dd'] + FUNDADEBT['dn'] + FUNDADEBT['dcvt'] - FUNDADEBT['dcvsub']
+FUNDADEBT['BD_C'] = FUNDADEBT['dlto'] - FUNDADEBT['cmp']
+FUNDADEBT['CL_C'] = FUNDADEBT['dclo']
 del FUNDADEBT
 del FUNDACMP
 #OLDERR
