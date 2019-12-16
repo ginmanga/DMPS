@@ -34,7 +34,7 @@ PRSTKC purchase of common and preferred stock
 #FUNDABS['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
 
 
-FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedNOV.gz"), index_col=0)
+FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedDEC16.gz"))
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 
 
@@ -65,9 +65,9 @@ f2 = list(range(4900, 4949)) #delete utilities
 f3 = list(range(6000, 6999)) #delete utilities
 FUNDABS['util'] = [1 if x in f2 else 0 for x in FUNDABS['sic_ch']]
 FUNDABS['fin'] = [1 if x in f3 else 0 for x in FUNDABS['sic_ch']]
-FUNDABS = FUNDABS[FUNDABS.util == 0]
-FUNDABS = FUNDABS[FUNDABS.fin == 0]
-FUNDABS = FUNDABS.drop(columns=['util','fin'])
+#FUNDABS = FUNDABS[FUNDABS.util == 0]
+#FUNDABS = FUNDABS[FUNDABS.fin == 0]
+#FUNDABS = FUNDABS.drop(columns=['util','fin'])
 # Calculate STD of sales and earninings
 FUNDABS['PROF'] = FUNDABS['oibdp']/FUNDABS['at']
 FUNDABS['SALE'] = FUNDABS['sale']/FUNDABS['at']
@@ -89,6 +89,11 @@ c_bs= ['gvkey','datadate', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc
 
 c_bs= ['gvkey','datadate', 'fyear', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc', 'oibdp',
        'dvc','dvt','che','ppent','capx','xsga','xrd','ceq', 'TOTALDEBT_C']
+
+c_bs= ['gvkey','datadate', 'fyear', 'ap', 'at','sale','prcc_f', 'cshfd', 'pstkl', 'txditc', 'oibdp',
+       'dvc','dvt','che','ppent','capx','xsga','xrd','ceq', 'TOTALDEBT_C','util',
+       'fin', 'sale_std_ff48_4']
+
 #Replace missing with 0 or remove
 list_replace = ['ap','cshfd', 'pstkl', 'txditc', 'oibdp',
                 'dvc','dvt','che','ppent','capx','xsga','xrd','ceq']
@@ -97,11 +102,15 @@ list_remove = ['at', 'TOTALDEBT_C', 'prcc_f']
 
 BS1DF = FUNDABS[c_bs]
 
+len(BS1DF) #512059
+
 for i in list_replace:
     BS1DF[i].fillna(0, inplace=True)
 
 for i in list_remove:
     BS1DF = BS1DF.dropna(subset=[i])
+
+len(BS1DF) #351182
 ##########################################
 #Add Inflation and deflate AT, t.....####
 #########################################
@@ -153,7 +162,7 @@ list_variables_re = [i + '_cut' for i in list_variables_WINSOR]
 for i in list_variables_re:
     BS1DF.rename(columns={i: i.replace('_cut','')}, inplace=True)
 
-
+len(BS1DF) #351182
 
 #Add volatility variables
 #First add quartelry ones to FUNDABS, then add them to BS1DF
@@ -163,6 +172,7 @@ FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'])
 
 to_keep = ['gvkey','datadate','sale_std_12','sale_std_9','sale_std_ff48_12','sale_std_ff48_9',
            'income_std_12','income_std_9']
+
 FUNDABS = pd.merge(FUNDABS,
                    FUNDAQ[to_keep],
                     left_on=['gvkey','datadate'],
@@ -179,6 +189,7 @@ ce.rename(columns={'counts':'AGE'}, inplace=True)
 
 to_keep = ['gvkey','datadate','sale_std_12','sale_std_9','sale_std_ff48_12','sale_std_ff48_9',
            'income_std_12','income_std_9','FF48','sic_ch']
+
 BS1DF = pd.merge(BS1DF,
                 FUNDABS[to_keep],
                 left_on=['gvkey','datadate'],
@@ -189,11 +200,14 @@ BS1DF = pd.merge(BS1DF,
                 ce[['gvkey','datadate','AGE']],
                 left_on=['gvkey','datadate'],
                 right_on = ['gvkey','datadate'], how='left')
-
-BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-temp.csv"), index=False)
+len(BS1DF) #351182
+BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-temp.csv.gz"), index=False, compression='gzip')
 
 BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF-temp.csv"))
 BS1DF['datadate'] = pd.to_datetime(BS1DF['datadate'])
+
+#BS1DF = BS1DF.drop(columns=['sic_ch_x','FF48_x'])
+#BS1DF.rename(columns={'sic_ch_y':'sic_ch','FF48_y':'FF48' }, inplace=True)
 #Translate quarter into date and match back to BS1DF
 c = pd.read_csv(os.path.join(datadirectory, "FF48SALE12.gz"))
 c['datadate'] = c['datacqtr'].str.replace(r'(\d+)(Q\d)', r'\1-\2')
@@ -206,11 +220,13 @@ c['datadate'] = pd.to_datetime(c['datadate'])
 #BS1DF.rename(columns={'datadate_x': 'datadate'}, inplace=True)
 #BS1DF.rename(columns={'FF48': 'FF48'}, inplace=True)
 #BS1DF_small = BS1DF[BS1DF.fyear < 1980]
-cc = c[['FF48','datadate','sale_std_ff48_12']]
+cc = c[['FF48','datadate','sale_std_ff48_12']] #why the hell? Different one
 BS1DF =  Functions.match_closest(BS1DF, cc, 'FF48', 'datadate', direction='nearest')
 BS1DF = BS1DF.sort_values(by=['gvkey','datadate'])
-BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-temp2.csv"), index=False)
-BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF-temp2.csv"))
+BS1DF.rename(columns={'sale_std_ff48_12_x':'sale_std_ff48_12_1','sale_std_ff48_12_y':'sale_std_ff48_12_2'}, inplace=True)
+
+BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-temp2.csv.gz"), index=False, compression='gzip')
+BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF-temp2.csv.gz"))
 BS1DF['datadate'] = pd.to_datetime(BS1DF['datadate'])
 
 #Add crsp EXCH and nation
@@ -238,25 +254,168 @@ BS1DF.to_csv(os.path.join(datadirectory, "BS1DF.csv.gz"), index=False, compressi
 
 #Merge with FUNDADEBT, keep onlu u.S AMX NYSE NASDAQ
 
-FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedNOV.gz"), index_col=0)
+FUNDADEBT = pd.read_csv(os.path.join(datadirectory, 'processed', "fundadebtprocessedDEC16.gz"), index_col=0)
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 FUNDADEBT.columns
-var_debt = ['gvkey', 'datadate', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C',
-       'OTHER_C', 'BDB_C', 'SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C',
-       'DN_C', 'SHORT_CTEMP', 'OTHERA_C', 'SUBCONV_CTEMP', 'OTHERA2_C',
-       'HH1_C', 'HH2_C', 'HH3_C', 'HH4_C', 'SUB_CPCT', 'SBN_CPCT', 'BD_CPCT',
-       'CL_CPCT', 'SHORT_CPCT', 'cmpPCT', 'OTHERA_CPCT', 'SUBNOTCONV_CPCT',
-       'SUBCONV_CPCT', 'CONV_CPCT', 'DD_CPCT', 'DN_CPCT', 'OTHERA2_CPCT']
 
+var_debt_comp = ['gvkey', 'datadate', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C',
+       'OTHER_C', 'BDB_C', 'SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C',
+       'DN_C', 'SHORT_CTEMP', 'OTHERA_C', 'SUBCONV_CTEMP', 'HH1', 'HH2', 'HH1B', 'HH2B'
+        'SUB_CPCT', 'SBN_CPCT', 'BD_CPCT', 'CL_CPCT', 'SHORT_CPCT', 'cmpPCT', 'OTHERA_CPCT',
+        'SUBNOTCONV_CPCT', 'SUBCONV_CPCT', 'CONV_CPCT', 'DD_CPCT', 'DN_CPCT', 'TOTALDEBT_C_2',
+        'NP_Exact','NP_OVER', 'NP_UNDER', 'NPOU_Exact', 'DEBTSUM_ERR', 'KEEP1', 'KEEP2','KEEP3']
+
+
+
+var_debt_comp = ['gvkey', 'datadate', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C',
+       'OTHER_C', 'BDB_C', 'SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C',
+       'DN_C','HH1', 'HH2', 'HH1B', 'HH2B', 'SUB_CPCT', 'SBN_CPCT', 'BD_CPCT',
+       'CL_CPCT', 'SHORT_CPCT', 'SUBNOTCONV_CPCT', 'SUBCONV_CPCT',
+        'CONV_CPCT', 'DD_CPCT', 'DN_CPCT', 'TOTALDEBT_C_2',
+        'NP_Exact','NP_OVER', 'NP_UNDER', 'NPOU_Exact', 'DEBTSUM_ERR', 'KEEP_1', 'KEEP_2','KEEP_3']
+
+
+
+
+#######################
 BS1DF_COMP = pd.merge(BS1DF,
-                FUNDADEBT[var_debt],
+                FUNDADEBT[var_debt_comp],
                 left_on=['gvkey','datadate'],
                 right_on = ['gvkey','datadate'], how='left')
 #BS1DF_COMP = Functions.rating_grps(BS1DF)
 
-len(BS1DF_COMP) # 286802 #282510
-BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.TOTALDEBT_C > 0]
-len(BS1DF_COMP) #243132 #239010
+
+len(BS1DF_COMP) #353611
+BS1DF_COMP = BS1DF_COMP[FUNDABS.util == 0]
+BS1DF_COMP = BS1DF_COMP[FUNDABS.fin == 0]
+BS1DF_COMP = BS1DF_COMP.drop(columns=['util','fin'])
+
+len(BS1DF_COMP) # 267984
+BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.TOTALDEBT_C_2 > 0]
+len(BS1DF_COMP) #217794 243132 #239010
+BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.HH1 >= 0]
+len(BS1DF_COMP) #217794
+BS1DF_COMP= BS1DF_COMP[BS1DF_COMP.HH1 <= 1]
+len(BS1DF_COMP) #214190
+
+BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.fyear < 2019]
+len(BS1DF_COMP) #214190
+
+BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.EXCHCD == 1)|
+                              (BS1DF_COMP.EXCHCD == 2) |
+                              (BS1DF_COMP.EXCHCD == 3)]
+len(BS1DF_COMP) #165431
+
+BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.SHRCD == 10)|
+                              (BS1DF_COMP.SHRCD == 11)]
+len(BS1DF_COMP) # 144308 158165
+
+
+
+BS1DF_COMP.to_csv(os.path.join(datadirectory, "BS1DF-ready.csv.gz"), index=False, compression='gzip')
+
+
+BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.D != 1]
+len(BS1DF_COMP) #124355 121157
+
+
+##################################
+##################################
+##################################
+########CAPITAL IQ################
+##################################
+##################################
+
+var_debt_capiq = ['gvkey', 'datadate','HH1', 'HH2','HH1B', 'HH2B','TOTALDEBT_C_2','NP_Exact','NP_OVER', 'NP_UNDER',
+                  'NPOU_Exact', 'KEEP_1', 'KEEP_2','KEEP_3']
+
+ALLIDSMERGED = pd.read_csv(os.path.join(datadirectory, 'processed', "CAPIIQGVKEYM.csv"), index_col=0)
+ALLIDSMERGED['datadate'] = pd.to_datetime(ALLIDSMERGED['datadate'])
+IQ_SAMPLE = pd.merge(ALLIDSMERGED,
+                BS1DF,
+                left_on=['gvkey','datadate'],
+                right_on = ['gvkey','datadate'], how='left')
+
+IQ_SAMPLE = pd.merge(IQ_SAMPLE,
+                FUNDADEBT[var_debt_capiq],
+                left_on=['gvkey','datadate'],
+                right_on = ['gvkey','datadate'], how='left')
+
+#Rename variables
+IQ_SAMPLE['CP_IQ'] = IQ_SAMPLE['TotOutstBalCommercialPaper']
+IQ_SAMPLE['DC_IQ']  = IQ_SAMPLE['OutstandingBalrRevolvingCredit']
+IQ_SAMPLE['TL_IQ'] = IQ_SAMPLE['OutstandingBalTermLoans']
+IQ_SAMPLE['SBN_IQ'] = IQ_SAMPLE['SrBondsandNotes']
+IQ_SAMPLE['SUB_IQ'] = IQ_SAMPLE['SubordinatedBondsandNotes']
+IQ_SAMPLE['CL_IQ'] = IQ_SAMPLE['OutstandingBalCapitalLeases']
+IQ_SAMPLE['OTHER_IQ'] = (IQ_SAMPLE['GeneralOtherBorrowings'] + IQ_SAMPLE['TotTrustPreferred'])
+
+list_types_iq = ['CP_IQ', 'DC_IQ', 'TL_IQ', 'SBN_IQ', 'SUB_IQ', 'CL_IQ', 'OTHER_IQ']
+for i in list_types_iq :
+    IQ_SAMPLE[i].fillna(0, inplace=True)
+
+#IQ_SAMPLE['TOTALDEBT_IQ'] = IQ_SAMPLE[list_types_iq].sum(axis=1)
+len(IQ_SAMPLE) # 73322
+IQ_SAMPLE = IQ_SAMPLE[IQ_SAMPLE.fyear > 2001]
+len(IQ_SAMPLE) # 52157
+IQ_SAMPLE.to_csv(os.path.join(datadirectory, "IQ_SAMPLE-temp.csv.gz"), index=False, compression='gzip')
+#IQ_SAMPLE['IQ_DEBT_C1'] = IQ_SAMPLE['TOTALDEBT_IQ']-IQ_SAMPLE['TOTALDEBT_C']
+#IQ_SAMPLE['IQ_DEBT_C2'] = IQ_SAMPLE['TOTALDEBT_IQ']-IQ_SAMPLE['TOTALDEBT_C_2']
+
+ts = ['OutstandingBalrRevolvingCredit', 'SrBondsandNotes','SubordinatedBondsandNotes',
+     'OutstandingBalCapitalLeases', 'TotOutstBalCommercialPaper','GeneralOtherBorrowings',
+     'OutstandingBalTermLoans','TotTrustPreferred','TotAdjustments']
+
+IQ_SAMPLE['sumdebt'] = IQ_SAMPLE[ts].sum(axis=1)
+IQ_SAMPLE['CHECK_IQ'] = (IQ_SAMPLE['sumdebt']-IQ_SAMPLE['TOTALDEBT_C'])/(IQ_SAMPLE['TOTALDEBT_C'])
+
+
+len(IQ_SAMPLE) #52157
+list_remove = ['at', 'TOTALDEBT_C', 'prcc_f']
+for i in list_remove:
+    IQ_SAMPLE = IQ_SAMPLE.dropna(subset=[i])
+
+len(IQ_SAMPLE) #52157
+IQ_SAMPLE = IQ_SAMPLE[IQ_SAMPLE.CHECK_IQ <= 0.1]
+len(IQ_SAMPLE) #44934 44929
+IQ_SAMPLE = IQ_SAMPLE[IQ_SAMPLE.CHECK_IQ >= -0.1]
+len(IQ_SAMPLE)  #43738 43733
+##############################################
+##############################################
+
+
+IQ_SAMPLE = IQ_SAMPLE[FUNDABS.util == 0]
+IQ_SAMPLE = IQ_SAMPLE[FUNDABS.fin == 0]
+IQ_SAMPLE = IQ_SAMPLE.drop(columns=['util','fin'])
+
+len(IQ_SAMPLE) # 36386
+
+
+IQ_SAMPLE = IQ_SAMPLE[(IQ_SAMPLE.EXCHCD == 1)|
+                              (IQ_SAMPLE.EXCHCD == 2) |
+                              (IQ_SAMPLE.EXCHCD == 3)]
+len(IQ_SAMPLE) #35967
+
+IQ_SAMPLE = IQ_SAMPLE[(IQ_SAMPLE.SHRCD == 10)|
+                              (IQ_SAMPLE.SHRCD == 11)]
+len(IQ_SAMPLE) #33787
+
+
+IQ_SAMPLE = IQ_SAMPLE[IQ_SAMPLE.TOTALDEBT_C > 0]
+len(IQ_SAMPLE) #33787
+list_types_iq = ['CP_IQ', 'DC_IQ', 'TL_IQ', 'SBN_IQ', 'SUB_IQ', 'CL_IQ', 'OTHER_IQ']
+
+
+IQ_SAMPLE = Functions.hhi_calculator(list_types_iq,
+                                     'sumdebt', 'HH1_IQ', IQ_SAMPLE)
+IQ_SAMPLE = Functions.hhi_calculator(list_types_iq,
+                                     'TOTALDEBT_C', 'HH2_IQ', IQ_SAMPLE)
+
+
+IQ_SAMPLE = IQ_SAMPLE[IQ_SAMPLE.fyear < 2019]
+len(IQ_SAMPLE) #33787
+IQ_SAMPLE.to_csv(os.path.join(datadirectory, "IQ-ready.csv.gz"), index=False, compression='gzip')
+
 BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.HH1_C >= 0]
 len(BS1DF_COMP) #229257
 BS1DF_COMP= BS1DF_COMP[BS1DF_COMP.HH1_C <= 1]
@@ -265,18 +424,9 @@ len(BS1DF_COMP) #228023
 BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.fyear < 2019]
 len(BS1DF_COMP) #228023
 
-BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.EXCHCD == 1)|
-                              (BS1DF_COMP.EXCHCD == 2) |
-                              (BS1DF_COMP.EXCHCD == 3)]
-len(BS1DF_COMP) #177217
 
-BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.SHRCD == 10)|
-                              (BS1DF_COMP.SHRCD == 11)]
-len(BS1DF_COMP) #158165
 
-list_remove = ['SBN_C']
-for i in list_remove:
-    BS1DF_COMP = BS1DF_COMP.dropna(subset=[i])
+
 
 len(BS1DF_COMP) #150490
 

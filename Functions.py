@@ -7,18 +7,27 @@ import gzip, os, csv
 import datetime
 #want a function to get me a gvkey
 
-def hhi_calculator(x, y, c, df):
+
+def hhi_calculator(x, y, c, df, options=0, denominators=0, selection=0):
     tt = [i + '_temp' for i in x]
+    if options == 1:
+        if df[selection] == 0:
+            y = denominators
     for i in x:
         df[i + '_temp'] = (df[i]/df[y])**2
     df[c] = df[tt].sum(axis=1)
     df[c] = (df[c]-(1/len(tt)))/(1-(1/len(tt)))
     return df.drop(tt, axis=1)
 
-def pct_calculator(x, y, name, df):
+
+def pct_calculator(x, y, name, df, options=0, denominators=0, selection=0):
+    if options == 1:
+        if df[selection] == 0:
+            y = denominators
     for i in x:
         df[i + name] = (df[i]/df[y])
     return df
+
 
 
 def write_file(path_file, filename, data, write_type):
