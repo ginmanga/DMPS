@@ -29,6 +29,18 @@ def pct_calculator(x, y, name, df, options=0, denominators=0, selection=0):
     return df
 
 
+def adj_dd1(data, list_vars, conditions=['NP_UNDER','NP_OVER','dd1']):
+    for i in list_vars:
+        var_name = i + 'PCT'
+        print(var_name)
+        data[i] = np.where((data[conditions[0]] == 1) & (data[conditions[2]] > 0),
+                                         data[i] + data[var_name]*data[conditions[2]], data[i])
+
+        data[i] = np.where((data[conditions[1]] == 1) & (data[conditions[2]] > 0),
+                                         data[i] - data[var_name]*data[conditions[2]], data[i])
+    return data
+
+
 
 def write_file(path_file, filename, data, write_type):
     """Writes all data to file"""
