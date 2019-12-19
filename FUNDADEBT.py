@@ -13,7 +13,7 @@ import Functions
 datadirectory = os.path.join(os.getcwd(), 'data')
 
 
-FUNDADEBT = pd.merge(FUNDADEBTS,
+FUNDADEBT = pd.merge(FUNDADEBT,
                     FUNDACMP[['gvkey','datadate','cmp']],
                     left_on=['gvkey','datadate'],
                     right_on = ['gvkey','datadate'], how='left')
@@ -25,6 +25,8 @@ list_replace = ['dltt','dm', 'cmp','dcvsub','ds','dd','dn','dlto','dlc','dd1','d
 
 for i in list_replace:
     FUNDADEBT[i].fillna(0, inplace=True)
+
+F_check  = FUNDADEBT[FUNDADEBT.gvkey==1239]
 
 # variables to modify
 FUNDADEBT['SUBNOTCONV_C'] = FUNDADEBT['ds']
@@ -45,28 +47,27 @@ FUNDADEBT['NP_UNDER'] = np.where((FUNDADEBT['CCC'] > 0.001001), 1, 0)
 FUNDADEBT['NP_OVER'] = np.where((FUNDADEBT['CCC'] < -0.001001), 1, 0)
 FUNDADEBT['COUNT'] = np.where((FUNDADEBT['dltt'] > 0) & (FUNDADEBT['CHECK_DEBT'] > 0), 1,0)
 FUNDADEBT['CHECK_DEBT'] = FUNDADEBT[list_vars].sum(axis=1)
-FUNDADEBT['CCCD1'] = np.where((FUNDADEBT['CCC'] > 0) & (FUNDADEBT['NP_Exact'] == 0), FUNDADEBT['CCC'] - FUNDADEBT['dd1'],
-                              FUNDADEBT['CCC'] + FUNDADEBT['dd1'])
+#FUNDADEBT['CCCD1'] = np.where((FUNDADEBT['CCC'] > 0) & (FUNDADEBT['NP_Exact'] == 0), FUNDADEBT['CCC'] - FUNDADEBT['dd1'],
+                              #FUNDADEBT['CCC'] + FUNDADEBT['dd1'])
 
-FUNDADEBTSSS = FUNDADEBT[FUNDADEBT.COUNT == 1]
-FUNDADEBTSSS = Functions.pct_calculator(list_vars, 'CHECK_DEBT', 'PCT', FUNDADEBTSSS)
+#FUNDADEBTSSS = FUNDADEBT[FUNDADEBT.COUNT == 1]
+FUNDADEBT = Functions.pct_calculator(list_vars, 'CHECK_DEBT', 'PCT', FUNDADEBT)
 
-FUNDADEBTSSS = Functions.adj_dd1(FUNDADEBTSSS, list_vars, conditions=['NP_UNDER','NP_OVER','dd1'])
-FUNDADEBTSSS['CHECK_DEBT2'] = FUNDADEBTSSS[list_vars].sum(axis=1)
-FUNDADEBTSSS['CCC2'] = FUNDADEBTSSS['dltt'] - FUNDADEBTSSS['CHECK_DEBT2']
-FUNDADEBTSSS['CCC1'] = FUNDADEBTSSS['CCC']
-FUNDADEBTSSS = FUNDADEBTSSS[FUNDADEBTSSS.COUNT == 1]
-for i in list_vars:
-    var_name = i + 'PCT'
-    print(var_name)
-    FUNDADEBTSSS[i] = np.where((FUNDADEBTSSS['NP_UNDER'] == 1) & (FUNDADEBTSSS['dd1'] > 0),
-                                     FUNDADEBTSSS[i] + FUNDADEBTSSS[var_name]*FUNDADEBTSSS['dd1'], FUNDADEBTSSS[i])
+FUNDADEBT = Functions.adj_dd1(FUNDADEBT, list_vars, conditions=['NP_UNDER','NP_OVER','dd1'])
+FUNDADEBT['CHECK_DEBT2'] = FUNDADEBT[list_vars].sum(axis=1)
+FUNDADEBT['CCC2'] = FUNDADEBT['dltt'] - FUNDADEBT['CHECK_DEBT2']
 
-    FUNDADEBTSSS[i] = np.where((FUNDADEBTSSS['NP_OVER'] == 1) & (FUNDADEBTSSS['dd1'] > 0),
-                                     FUNDADEBTSSS[i] - FUNDADEBTSSS[var_name]*FUNDADEBTSSS['dd1'], FUNDADEBTSSS[i])
+FUNDADEBT['NPOU_Exact'] = np.where((FUNDADEBT['CCC2'] >= -0.00101)
+                                       & (FUNDADEBT['CCC2'] <= 0.00101), 1, 0)
+
+FUNDADEBT['DEBTSUM_ERR'] = FUNDADEBT['CCC2']/FUNDADEBT['dltt']
+
+FUNDADEBT['KEEP_E'] = np.where((FUNDADEBT['DEBTSUM_ERR'] >= -0.1)
+                                       & (FUNDADEBT['DEBTSUM_ERR'] <= 0.1), 1, 0)
 
 
 
+FUNDADEBT = FUNDADEBT.drop(columns=['CCC2','CHECK_DEBT2', 'CHECK_DEBT'])
 
 # handle situations where dltt = 0, but dd1 > 0
 FUNDADEBT['TOTALDEBT_C'] = FUNDADEBT['dltt'] + FUNDADEBT['dlc']
@@ -82,17 +83,37 @@ FUNDADEBT['BDB_C'] = FUNDADEBT['BD_C'] + FUNDADEBT['SHORT_C']
 
 #NEW
 
-FUNDADEBT['SUBNOTCONV_C'] = FUNDADEBT['ds']
-FUNDADEBT['SUBCONV_C'] = FUNDADEBT['dcvsub']
-FUNDADEBT['CONV_C'] = FUNDADEBT['dcvsr']
-FUNDADEBT['DD_C'] = FUNDADEBT['dd']
-FUNDADEBT['DN_C'] = FUNDADEBT['dn']
-
-FUNDADEBT['TOTALDEBT_C_D'] = FUNDADEBT['dltt'] + FUNDADEBT['dlc'] - FUNDADEBT['dd1']
-
 FUNDADEBT['TOTALDEBT_C_2'] = FUNDADEBT['SUBNOTCONV_C'] + FUNDADEBT['SUBCONV_C'] +\
                          FUNDADEBT['CONV_C'] + FUNDADEBT['DD_C'] + FUNDADEBT['DN_C'] + FUNDADEBT['BD_C'] +\
                          FUNDADEBT['CL_C'] + FUNDADEBT['SHORT_C']+  FUNDADEBT['cmp']
+
+
+
+FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C'],
+                                     'TOTALDEBT_C_2', 'HH1', FUNDADEBT)
+FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_2', 'HH2', FUNDADEBT)
+
+
+
+
+list_sum2 = ['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C']
+FUNDADEBT = Functions.pct_calculator(list_sum2, 'TOTALDEBT_C_2', 'PCT', FUNDADEBT)
+list_sum2 = ['SUBNOTCONV_C','SUBCONV_C','CONV_C','DD_C', 'DN_C', 'BD_C', 'CL_C', 'SHORT_C']
+FUNDADEBT = Functions.pct_calculator(list_sum2, 'TOTALDEBT_C_2', 'PCT', FUNDADEBT)
+
+
+FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessedDEC18.csv.gz"), index=False, compression='gzip')
+
+
+FUNDADEBTS = FUNDADEBT[FUNDADEBT.gvkey==1239]
+
+FUNDADEBT = FUNDADEBT.drop(columns=['rcc','last_1','CHECK_DEBT','CCC'])
+
+FUNDADEBTSSS = FUNDADEBT[FUNDADEBT.dd1 > 0]
+
+FUNDADEBTSSS['CHECKC'] = np.where((FUNDADEBTSSS['dd1'] > 0) & (FUNDADEBTSSS['dltt'] == 0), 1, 0)
+FUNDADEBTSSS = FUNDADEBTSSS[FUNDADEBTSSS.CHECKC == 1]
+
 
 #FUNDADEBT = FUNDADEBT.drop(columns=['TOTALDEBT_C_21','TOTALDEBT_C1','SHORT_C', 'DD1'])
 
@@ -144,7 +165,7 @@ FUNDADEBT['KEEP_1'] = np.where((FUNDADEBT['DEBTSUM_ERR'] >= -0.1)
                                        & (FUNDADEBT['DEBTSUM_ERR'] <= 0.1), 1, 0)
 
 
-FUNDADEBT['KEEP_2'] = np.where((FUNDADEBT['NP_Exact'] == 1) |(FUNDADEBT['NPOU_Exact'] == 1)|(FUNDADEBT['KEEP_1'] == 1)
+FUNDADEBT['KEEP_2'] = np.where((FUNDADEBT['NP_Exact'] == 1) | (FUNDADEBT['NPOU_Exact'] == 1) | (FUNDADEBT['KEEP_1'] == 1)
                                   , 1, 0) #most important
 FUNDADEBT['KEEP_3'] = np.where((FUNDADEBT['KEEP_2'] == 1)
                                        & (FUNDADEBT['NPOU_Exact'] == 0), 1, 0)

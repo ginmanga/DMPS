@@ -60,7 +60,7 @@ FUNDAQ = pd.merge(FUNDAQ,  FUNDAQQ[['gvkey','datadate','NEWATT']],
 #FUNDAQ.shape
 #create sale/at variable
 FUNDAQ['saleat'] = FUNDAQ['NEWSALE']/FUNDAQ['NEWATT_y']
-
+FUNDAQ['oiadpqat'] = FUNDAQ['oiadpq']/FUNDAQ['NEWATT_y']
 #cleanup
 #del FUNDAQQ
 #del FUNDAQAT
@@ -78,7 +78,7 @@ FUNDAQ['saleat'] = FUNDAQ['NEWSALE']/FUNDAQ['NEWATT_y']
 #remove financials and utilities before calculating, create functions to automate the process
 #FUNDAQ.shape
 FUNDAQ = Functions.winsor(FUNDAQ, column = ['saleat'])
-FUNDAQ = Functions.winsor(FUNDAQ, column = ['oiadpq'])
+FUNDAQ = Functions.winsor(FUNDAQ, column = ['oiadpqat'])
 
 #build function to calculate the standard devs in different situations
 

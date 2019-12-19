@@ -36,10 +36,9 @@ def adj_dd1(data, list_vars, conditions=['NP_UNDER','NP_OVER','dd1']):
         data[i] = np.where((data[conditions[0]] == 1) & (data[conditions[2]] > 0),
                                          data[i] + data[var_name]*data[conditions[2]], data[i])
 
-        data[i] = np.where((data[conditions[1]] == 1) & (data[conditions[2]] > 0),
-                                         data[i] - data[var_name]*data[conditions[2]], data[i])
+        #data[i] = np.where((data[conditions[1]] == 1) & (data[conditions[2]] > 0),
+                                         #data[i] - data[var_name]*data[conditions[2]], data[i])
     return data
-
 
 
 def write_file(path_file, filename, data, write_type):
@@ -163,28 +162,36 @@ def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', opt
     return ff48_dict
 
 
-
-def winsor(data, column=[], quantiles=[0.99, 0.01]):
+def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968):
     """function to winsorize"""
+    # print(year)
+    # print(cond_list)
+    # print(cond_num)
+    # print(len(data))
+    data_temp = data[data['fyear'] >= year]
+    # print(len(data_temp))
+
+    for index, elem in enumerate(cond_list):
+        # print(index+1, elem)
+        data_temp = data_temp[data_temp[elem] == cond_num[index]]
+        print(len(data_temp))
+
     for i in column:
         print(i)
-        data['temp1'] = data[i].quantile(quantiles[0])
-        data['temp2'] = data[i].quantile(quantiles[1])
+        data['temp1'] = data_temp[i].quantile(quantiles[0])
+        data['temp2'] = data_temp[i].quantile(quantiles[1])
         new_var = i + '_cut'
-        #data[new_var] = np.where(data[i] > data['temp1'], data['temp1'], data[i])
         data[new_var] = np.where(data[i] > data['temp1'], data['temp1'], data[i])
         data[new_var] = np.where(data[new_var] < data['temp2'], data['temp2'], data[new_var])
-        #data[new_var] = np.where(data[i].isna, data[i], data[new_var])
         data = data.drop('temp1', axis=1)
         data = data.drop('temp2', axis=1)
     return data
 
 
 def rol_vars(data, var, newname, group, onn, window, levels, group1=[], group2=[]):
-
+    """Calculates rolling statistic given parameters"""
     get_meth = getattr(data.groupby('gvkey').rolling(window, on=onn)[[var]], 'std')
     c = get_meth().reset_index()
-    #print(c.shape)
     if levels == 2:
         c = pd.merge(c, data[group1],
                      left_on=group,
@@ -193,17 +200,10 @@ def rol_vars(data, var, newname, group, onn, window, levels, group1=[], group2=[
         get_meth = getattr(c.groupby(group2)[[var]], 'mean')
         c = get_meth().reset_index()
     c.rename(columns={var: newname}, inplace=True)
-    #print(c.shape)
     if levels == 2:
-        data = pd.merge(data, c,
-                          left_on = group2,
-                          right_on = group2, how='left')
+        data = pd.merge(data, c, left_on=group2, right_on=group2, how='left')
     if levels == 1:
-        data = pd.merge(data, c,
-                          left_on = group,
-                          right_on = group, how='left')
-    #print(data.shape)
-    #del c
+        data = pd.merge(data, c, left_on=group, right_on=group, how='left')
     return data, c
 
 

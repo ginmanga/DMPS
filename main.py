@@ -1,12 +1,13 @@
-import datetime, csv
-#from sas7bdat import SAS7BDAT
 import pandas as pd
-import pandasql as ps
+# import pandasql as ps
 import numpy as np
-import gzip, os, csv
+import csv
 import datetime
+# import gzip
+import os
 import Functions
 import importlib
+
 
 datadirectory = os.path.join(os.getcwd(), 'data')
 
@@ -17,7 +18,7 @@ FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'], format='%Y%m%d')
 FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
 
 FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
-FUNDADEBTS = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
+FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
 
 FUNDACMP = pd.read_csv(os.path.join(datadirectory, "fundaCMP7019.gz"), sep='\t')
 FUNDACMP = FUNDACMP[['gvkey' ,'datadate' ,'cmp']].dropna(subset=['cmp'])
@@ -33,7 +34,7 @@ del FUNDABS2
 FUNDAP = pd.read_csv(os.path.join(datadirectory, "APWCAP5018.gz"), sep='\t')
 FUNDAP['datadate'] = pd.to_datetime(FUNDABS['datadate'], format='%Y%m%d')
 
-#FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "fundamainID7019.txt.gz"), sep='\t')
+# FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "fundamainID7019.txt.gz"), sep='\t')
 FUNDAMAINID = pd.read_csv(os.path.join(datadirectory, "FUNDAMAINID5018.gz"), sep='\t')
 
 FUNDAMAINID = FUNDAMAINID[FUNDAMAINID.indfmt == 'INDL']
