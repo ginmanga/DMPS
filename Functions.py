@@ -70,11 +70,11 @@ def ext_fromzip(dir, filename, options=[]):
     return acc_list
 
 
-def collapse_list(a, x, y, header = 0):
-    #a list to collapse
-    #x group of variables used to collapase, indexes
-    #y list of columns to keep
-    # a collapsed list collpased with a 10K and AR path if any
+def collapse_list(a, x, y, header=0):
+    # a list to collapse
+    # x group of variables used to collapase, indexes
+    # y list of columns to keep
+    # a collapsed list collapsed with a 10K and AR path if any
     counter_1 = 0
     counter_2 = 0
     accumulator_text = []
@@ -162,17 +162,18 @@ def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', opt
     return ff48_dict
 
 
-def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968):
+def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968, freq='annual'):
     """function to winsorize"""
     # print(year)
     # print(cond_list)
     # print(cond_num)
     # print(len(data))
-    data_temp = data[data['fyear'] >= year]
-    # print(len(data_temp))
+    if freq == 'annual':
+        data_temp = data[data['fyear'] >= year]
+    if freq == 'qtr':
+        data_temp = data[data['fyearq'] >= year]
 
     for index, elem in enumerate(cond_list):
-        # print(index+1, elem)
         data_temp = data_temp[data_temp[elem] == cond_num[index]]
         print(len(data_temp))
 
@@ -243,6 +244,7 @@ def match_closest(data1, data2, key1, date1, key2=0, date2=0, direction='backwar
     data1 = data1.drop(columns=['tempID'])
     return data1
 
+
 def fin_ratio(data, ratios, denominator, names=[]):
     "takes data, a list of variables, names and a denomiator to calculate ratios"
     for index, elem in enumerate(ratios):
@@ -274,8 +276,9 @@ def rating_grps(data):
 
     for index, elem in enumerate(names):
         print(elem)
-        print(index)
-        print(groups[index])
-        data[elem] = [1 if x in groups[index] else 0 for x in data['splticrm']]
+        conds = [data['splticrm'].isin(groups[index]), data['splticrm'].isnull()]
+        choices = [1, np.nan]
+        print(len(conds), len(choices))
+        data[elem] = np.select(conds, choices, default=0)
     return data
 

@@ -88,10 +88,9 @@ FUNDADEBT['TOTALDEBT_C_2'] = FUNDADEBT['SUBNOTCONV_C'] + FUNDADEBT['SUBCONV_C'] 
                          FUNDADEBT['CL_C'] + FUNDADEBT['SHORT_C']+  FUNDADEBT['cmp']
 
 
-
-FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C','SUBCONV_C','CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C'],
+FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C'],
                                      'TOTALDEBT_C_2', 'HH1', FUNDADEBT)
-FUNDADEBT = Functions.hhi_calculator(['SUB_C','SBN_C','BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_2', 'HH2', FUNDADEBT)
+FUNDADEBT = Functions.hhi_calculator(['SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_2', 'HH2', FUNDADEBT)
 
 
 
@@ -215,9 +214,8 @@ FUNDADEBT['CHECK_3'] = np.where(FUNDADEBT['CHECK_2'].round(1) == 0,1,0) \
                         * np.where(FUNDADEBT['CHECK_CO'] == 1, 0, 1)
 
 # Adjustments, check sTotal_debt - sum total
-FUNDADEBT['sum_temp'] = FUNDADEBT[['SUB_C','SBN_C','BD_C', 'CL_C', 'cmp']].sum(axis=1)
+FUNDADEBT['sum_temp'] = FUNDADEBT[['SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'cmp']].sum(axis=1)
 FUNDADEBT = Functions.pct_calculator(list_sum1, 'sum_temp', 'TEMP', FUNDADEBT)
-
 
 FUNDADEBT['SUB_C'] = FUNDADEBT['SUB_C'] + FUNDADEBT['dd1']*FUNDADEBT['SUB_CTEMP']*FUNDADEBT['CHECK_3']
 FUNDADEBT['SBN_C'] = FUNDADEBT['SBN_C'] + FUNDADEBT['dd1']*FUNDADEBT['SBN_CTEMP']*FUNDADEBT['CHECK_3']
