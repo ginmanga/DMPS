@@ -29,17 +29,21 @@ def pct_calculator(x, y, name, df, options=0, denominators=0, selection=0):
     return df
 
 
-def adj_dd1(data, list_vars, conditions=['NP_UNDER','NP_OVER','dd1']):
+def adj_dd1_old(data, list_vars, conditions=['NP_UNDER','NP_OVER','dd1']):
     for i in list_vars:
         var_name = i + 'PCT'
         print(var_name)
         data[i] = np.where((data[conditions[0]] == 1) & (data[conditions[2]] > 0),
-                                         data[i] + data[var_name]*data[conditions[2]], data[i])
-
-        #data[i] = np.where((data[conditions[1]] == 1) & (data[conditions[2]] > 0),
-                                         #data[i] - data[var_name]*data[conditions[2]], data[i])
+                           data[i] + data[var_name]*data[conditions[2]], data[i])
+        data[i] = np.where((data[conditions[1]] == 1) & (data[conditions[2]] > 0),
+                                         data[i] - data[var_name]*data[conditions[2]], data[i])
     return data
 
+def adj_dd1(data, list_vars, conditions=['NP_Exact', 'dd1']):
+    for i in list_vars:
+        var_name = i + 'PCT'
+        data[i] = np.where((data[conditions[0]] == 1), data[i] + data[var_name] * data[conditions[1]], data[i])
+    return data
 
 def write_file(path_file, filename, data, write_type):
     """Writes all data to file"""
@@ -147,8 +151,6 @@ def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', opt
             else:
                 new_long_list[count].extend(list(range(int(l.split('-')[0]), int(l.split('-')[1])+1)))
         count += 1
-        #print(count)
-
     ff48_dict = {}
     for i in new_long_list:
         temp_list = [str(l).zfill(4) for l in i[1:]]
@@ -162,25 +164,27 @@ def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', opt
     return ff48_dict
 
 
-def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968, freq='annual'):
+def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968, freq='annual', options=1):
     """function to winsorize"""
     # print(year)
     # print(cond_list)
     # print(cond_num)
     # print(len(data))
-    if freq == 'annual':
-        data_temp = data[data['fyear'] >= year]
-    if freq == 'qtr':
-        data_temp = data[data['fyearq'] >= year]
-
-    for index, elem in enumerate(cond_list):
-        data_temp = data_temp[data_temp[elem] == cond_num[index]]
-        print(len(data_temp))
+    data_temp = data
+    if options == 1:
+        if freq == 'annual':
+            data_temp = data[data['fyear'] >= year]
+        if freq == 'qtr':
+            data_temp = data[data['fyearq'] >= year]
+        for index, elem in enumerate(cond_list):
+            data_temp = data_temp[data_temp[elem] == cond_num[index]]
+            print(len(data_temp))
 
     for i in column:
         print(i)
         data['temp1'] = data_temp[i].quantile(quantiles[0])
         data['temp2'] = data_temp[i].quantile(quantiles[1])
+        print(data_temp[i].describe())
         new_var = i + '_cut'
         data[new_var] = np.where(data[i] > data['temp1'], data['temp1'], data[i])
         data[new_var] = np.where(data[new_var] < data['temp2'], data['temp2'], data[new_var])
@@ -189,20 +193,29 @@ def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], y
     return data
 
 
-def rol_vars(data, var, newname, group, onn, window, levels, group1=[], group2=[]):
+def rol_vars(data, var, newname, group, onn, window, levels, mp1=None, group1=[], group2=[], mp=3):
     """Calculates rolling statistic given parameters"""
-    get_meth = getattr(data.groupby('gvkey').rolling(window, on=onn)[[var]], 'std')
-    c = get_meth().reset_index()
+    if levels == 1:
+        get_meth = getattr(data.groupby('gvkey').rolling(window, min_periods=mp1, on=onn)[[var]], 'std')
     if levels == 2:
+        get_meth = getattr(data.groupby('gvkey').rolling(window, min_periods=mp, on=onn)[[var]], 'std')
+    c = get_meth().reset_index()
+    print(c.columns)
+    if levels == 2:
+        c = winsor(c, column=[var], cond_list=[], cond_num=[], quantiles=[0.975, 0.025], options=0)
+        print(c[var + '_cut'].describe())
         c = pd.merge(c, data[group1],
                      left_on=group,
                      right_on=group, how='left')
         c = c.dropna(subset=[var])
-        get_meth = getattr(c.groupby(group2)[[var]], 'mean')
+        # get_meth = getattr(c.groupby(group2)[[var]], 'mean')
+        get_meth = getattr(c.groupby(group2)[[var + '_cut']], 'mean')
         c = get_meth().reset_index()
-    c.rename(columns={var: newname}, inplace=True)
+    #c.rename(columns={var: newname}, inplace=True)
+    c.rename(columns={var + '_cut': newname}, inplace=True)
+    groups = [newname, 'FF48', 'fyear']
     if levels == 2:
-        data = pd.merge(data, c, left_on=group2, right_on=group2, how='left')
+        data = pd.merge(data, c[groups], left_on=group2, right_on=group2, how='left')
     if levels == 1:
         data = pd.merge(data, c, left_on=group, right_on=group, how='left')
     return data, c

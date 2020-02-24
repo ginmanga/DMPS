@@ -1,22 +1,23 @@
 import pandas as pd
-# import pandasql as ps
 import numpy as np
 import csv
 import datetime
-# import gzip
 import os
 import importlib
 import Functions
 importlib.reload(Functions)
+%load_ext autoreload
+%reload_ext autoreload
 
 datadirectory = os.path.join(os.getcwd(), 'data')
+data_all = os.path.join('C:\\', 'Users', 'Panqiao', 'Documents', 'Research', 'Data')
 
 FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "FUNDADEBT19502018.gz"), sep='\t')
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'], format='%Y%m%d')
 FUNDADEBT = FUNDADEBT[FUNDADEBT.indfmt == 'INDL']
 
 FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_fn')]
-FUNDADEBT = FUNDADEBT.loc[:,~FUNDADEBT.columns.str.endswith('_dc')]
+FUNDADEBT = FUNDADEBT.loc[:, ~FUNDADEBT.columns.str.endswith('_dc')]
 
 FUNDACMP = pd.read_csv(os.path.join(datadirectory, "fundaCMP7019.gz"), sep='\t')
 FUNDACMP = FUNDACMP[['gvkey', 'datadate', 'cmp']].dropna(subset=['cmp'])
@@ -46,7 +47,11 @@ FUNDAMAINID = FUNDAMAINID[FUNDAMAINID.indfmt == 'INDL']
 CRSPLINK = pd.read_csv(os.path.join(datadirectory, "CRSPLINK.gz"), sep='\t')
 CAPIQID = pd.read_csv(os.path.join(datadirectory, "Capital IQ Identifier.txt"), sep='\t')
 
-CRSPM = pd.read_csv(os.path.join(datadirectory, "CRSPMONTHLY5018.gz"), sep='\t')
+#Data CRSP
+data_all = os.path.join('C:\\', 'Users', 'Panqiao', 'Documents', 'Research', 'Data')
+CRSP = os.path.join(data_all, 'Compustat', 'CRSP')
+
+CRSPM = pd.read_csv(os.path.join(CRSP, "CRSPMONTHLY5018.gz"), sep='\t')
 CRSPM['date'] = pd.to_datetime(CRSPM['date'], format='%Y%m%d')
 
 SPCR = pd.read_csv(os.path.join(datadirectory, "cpstCRN.txt"), sep='\t')
