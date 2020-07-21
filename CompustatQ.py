@@ -11,7 +11,7 @@ FUNDABS = 0
 # calculate quarterly (12) stdeviation of cash flow and sales per firm
 # do it at industry level use SIC codes Fama french 48 industy
 
-FUNDAQ = pd.read_csv(os.path.join(datadirectory,'processed', "FUNDAQDEC4.gz"), index_col=0)
+FUNDAQ = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDAQDEC4.gz"), index_col=0)
 FUNDAQ = FUNDAQ.dropna(subset=['datacqtr'])
 
 FUNDAQ['datadate'] = pd.to_datetime(FUNDAQ['datadate'])

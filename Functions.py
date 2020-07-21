@@ -5,6 +5,9 @@ import pandasql as ps
 import numpy as np
 import gzip, os, csv
 import datetime
+import importlib
+import Functions
+importlib.reload(Functions)
 #want a function to get me a gvkey
 
 
@@ -117,7 +120,7 @@ def collapse_list(a, x, y, header=0):
     return collapsed_list
 
 
-def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', option=0):
+def fama_french_ind(datadirectory, filename, industries=48, nametosave='', option=0):
     """Takes a text file from KFrench website and returns dictionary with sic code as key and FF industry as value"""
     datadirectoryS = os.path.join(datadirectory, filename)
     with open(datadirectoryS) as f:
@@ -164,7 +167,7 @@ def fama_french_ind(datadirectory, filename, industries = 48, nametosave='', opt
     return ff48_dict
 
 
-def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968, freq='annual', options=1):
+def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], year=1968, yearvar='fyear', freq='annual', options=1):
     """function to winsorize"""
     # print(year)
     # print(cond_list)
@@ -173,7 +176,7 @@ def winsor(data, column=[], cond_list=[], cond_num=[], quantiles=[0.99, 0.01], y
     data_temp = data
     if options == 1:
         if freq == 'annual':
-            data_temp = data[data['fyear'] >= year]
+            data_temp = data[data[yearvar] >= year]
         if freq == 'qtr':
             data_temp = data[data['fyearq'] >= year]
         for index, elem in enumerate(cond_list):
@@ -295,3 +298,48 @@ def rating_grps(data):
         data[elem] = np.select(conds, choices, default=0)
     return data
 
+
+def prep_asof(data, date, id, options=0):
+    data['temp'] = '19600101'
+    data['temp'] = pd.to_datetime(data['temp'])
+    #data['date'] = pd.to_datetime(data[date], format='%Y%m%d')
+    data['tempdays'] = (data[date] - data['temp']).dt.days
+    if options == 0:
+        data[id] = data[id].apply(int)
+    data[id] = data[id].apply(str)
+    data['temp'] = '10000000'
+    data['tempID'] = data[id] + data['temp']
+    data['tempID'] = data['tempID'].apply(int)
+    data['tempID'] = data['tempID'] + data['tempdays']
+    return data
+
+
+def create_groups(data, grpby_var, var_name, new_name, grps=5):
+    """Creates quintiles and groups"""
+    # first create the quintiles
+    # Then create the variables in the data frame
+    quintile_holder = []
+    for i in range(grps):
+        newname = new_name + "_" + str(i+1)
+        q = (1/grps) + i*(1/grps)
+        data[newname] = 0
+        newname = data.groupby([grpby_var])[[var_name]].quantile(q)
+        quintile_holder.append(newname)
+    data = data.apply(lambda row: sort_g(row, grpby_var, quintile_holder, var_name, new_name, grps), axis=1)
+    return data
+
+def sort_g(x, grpby_var, a, var, initial, grps=5):
+    # print(a)
+    for i in range(grps):
+        #print(i)
+        #print(a[i])
+        if i == 0:
+            # x['m'] = a[i].loc[x[grpby_var]][0]
+            if x[var] <= a[i].loc[x[grpby_var]][0]:
+                x[initial + '_1'] = 1
+        if i > 0:
+            # x['mm'] = a[i].loc[x[grpby_var]][0]
+            if a[i-1].loc[x[grpby_var]][0] < x[var] <= a[i].loc[x[grpby_var]][0]:
+                name = initial + "_" + str(i+1)
+                x[name] = 1
+    return x

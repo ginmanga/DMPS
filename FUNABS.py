@@ -24,14 +24,23 @@ FUNDABS = 0
 # XSGA selling general and admin expenses
 # XRD research and development
 # CEQ common/ordinary equity  total
+#AP accounts payable
 # APALCH accounts payable and AL increase decrewase
+#rect recievables total
+# tectr recevables trade
 # RECCH accounts receivable decrease
 # WCAP working capital
+#invt inventories total
+#invfg finished goods
+#invrm inventories raw
 # dltis long-term debt issuance
 # dltr long-term debt reduction
 # DLCCH current debt changes
 # SSTK sale of common and preferred stock
 # PRSTKC purchase of common and preferred stock
+#pstkc - preferred stock conv
+# pstk preferred stockj total
+# pstkrv preferred stock redemption value
 
 # from debt get TOTALDEBT SUB SBN BD CL SHORT CHECK HH1 HH2
 
@@ -215,7 +224,10 @@ BS1DF['datadate'] = pd.to_datetime(BS1DF['datadate'])
 
 # Add crsp EXCH and nation
 
-FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDALIST_CRSPIDSDEC4.gz"), index_col=0)
+## CHANGE THIS ONE TO THE NEW
+
+FUNDALIST_CRSPIDS_old = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDALIST_CRSPIDSDEC4.gz"), index_col=0)
+FUNDALIST_CRSPIDS = pd.read_csv(os.path.join(datadirectory, 'processed', "FUNDALIST_CRSPIDSFEB28.csv.gz"), index_col=0)
 FUNDALIST_CRSPIDS = FUNDALIST_CRSPIDS.sort_values(by=['gvkey', 'datadate'])
 FUNDALIST_CRSPIDS['datadate'] = pd.to_datetime(FUNDALIST_CRSPIDS['datadate'])
 
@@ -237,9 +249,10 @@ BS1DF['EXCHANGE'] = np.where((BS1DF.EXCHCD == 1) | (BS1DF.EXCHCD == 2) | (BS1DF.
 BS1DF['USCOMMON'] = np.where((BS1DF.SHRCD == 10) | (BS1DF.SHRCD == 11), 1, 0)
 BS1DF['NOTMISSING'] = np.where(BS1DF['at'].notna() & BS1DF['prcc_f'].notna() & BS1DF['TOTALDEBT_C'].notna(), 1, 0)
 
-BS1DF.to_csv(os.path.join(datadirectory, "BS1DF.csv.gz"), index=False, compression='gzip')
+BS1DF.to_csv(os.path.join(datadirectory, "BS1DF-March03.csv.gz"), index=False, compression='gzip')
 
 BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF.csv.gz"))
+BS1DF = pd.read_csv(os.path.join(datadirectory, "BS1DF-March03.csv.gz"))
 BS1DF['datadate'] = pd.to_datetime(BS1DF['datadate'])
 # Merge with FUNDADEBT, keep only u.S AMX NYSE NASDAQ
 
@@ -261,7 +274,7 @@ var_debt_comp = ['gvkey', 'datadate', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C
                  'SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C', 'DN_C', 'cmp', 'dd1', 'dlc', 'HH1', 'HH2', 'SUB_CPCT',
                  'SBN_CPCT', 'BD_CPCT', 'CL_CPCT', 'SHORT_CPCT', 'SUBNOTCONV_CPCT', 'SUBCONV_CPCT', 'CONV_CPCT',
                  'DD_CPCT', 'DN_CPCT', 'TOTALDEBT_C_2', 'NP_Exact', 'NP_OVER', 'NP_UNDER', 'NPOU_Exact',
-                 'DEBTSUM_ERR', 'KEEP_E']
+                 'DEBTSUM_ERR', 'KEEP_E', 'dm', 'dltp']
 
 
 #######################
@@ -314,18 +327,7 @@ BS1DF_COMP = Functions.winsor(BS1DF_COMP, column=list_variables_WINSOR,
 
 
 
-# list_variables_WINSOR = ['MVBook', 'PROF', 'CASH', 'TANG', 'CAPEX', 'ADVERT', 'RD', 'MLEV', 'BLEV', 'AP']
-
-#list_variables_re = [i + '_cut' for i in list_variables_WINSOR]
-#for i in list_variables_re:
-    #BS1DF_COMP.rename(columns={i: i.replace('_cut', '')}, inplace=True)
-
-#BS1DF_COMP = BS1DF_COMP.drop(list_variables_WINSOR, axis=1)
-# BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.EXCHCD == 1)| (BS1DF_COMP.EXCHCD == 2) | (BS1DF_COMP.EXCHCD == 3)]
-# len(BS1DF_COMP) #174740 165431
-
-# BS1DF_COMP = BS1DF_COMP[(BS1DF_COMP.SHRCD == 10)| (BS1DF_COMP.SHRCD == 11)]
-# len(BS1DF_COMP) #156014 144308 158165
+BS1DF_COMP.to_csv(os.path.join(datadirectory, "BS1DF-ready-Mar03.csv.gz"), index=False, compression='gzip')
 
 BS1DF_COMP.to_csv(os.path.join(datadirectory, "BS1DF-ready-Jan30.csv.gz"), index=False, compression='gzip')
 BS1DF_COMP = BS1DF_COMP[BS1DF_COMP.D != 1]
@@ -339,13 +341,14 @@ len(BS1DF_COMP)  # 124355 121157
 ##################################
 ##################################
 
-FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "fundadebtprocessedJan29.csv.gz"))
+FUNDADEBT = pd.read_csv(os.path.join(datadirectory, "fundadebtprocessedJan30.csv.gz"))
 FUNDADEBT['datadate'] = pd.to_datetime(FUNDADEBT['datadate'])
 
 var_debt_capiq = ['gvkey', 'datadate', 'SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C', 'OTHER_C', 'BDB_C', 'SUBNOTCONV_C',
                   'SUBCONV_C', 'CONV_C', 'DD_C', 'DN_C', 'cmp', 'dd1', 'dlc', 'HH1', 'HH2', 'SUB_CPCT', 'SBN_CPCT',
                   'BD_CPCT', 'CL_CPCT', 'SHORT_CPCT', 'SUBNOTCONV_CPCT', 'SUBCONV_CPCT', 'CONV_CPCT', 'DD_CPCT',
-                  'DN_CPCT', 'TOTALDEBT_C_2', 'NP_Exact', 'NP_OVER', 'NP_UNDER', 'NPOU_Exact', 'DEBTSUM_ERR', 'KEEP_E']
+                  'DN_CPCT', 'TOTALDEBT_C_2', 'NP_Exact', 'NP_OVER', 'NP_UNDER', 'NPOU_Exact', 'DEBTSUM_ERR', 'KEEP_E',
+                  'dm', 'dltp']
 
 ALLIDSMERGED = pd.read_csv(os.path.join(datadirectory, 'processed', "CAPIIQGVKEYM.csv"), index_col=0)
 ALLIDSMERGED['datadate'] = pd.to_datetime(ALLIDSMERGED['datadate'])
@@ -450,6 +453,8 @@ print(IQ_SAMPLE['PROF_cut'].quantile(0.99))
 print(IQ_SAMPLE['PROF_cut'].max())
 print(IQ_SAMPLE['PROF_cut'].quantile(0.01))
 print(IQ_SAMPLE['PROF_cut'].min())
+
+IQ_SAMPLE.to_csv(os.path.join(datadirectory, "IQ-ready-Mar03.csv.gz"), index=False, compression='gzip')
 
 
 IQ_SAMPLE.to_csv(os.path.join(datadirectory, "IQ-ready-Jan30.csv.gz"), index=False, compression='gzip')

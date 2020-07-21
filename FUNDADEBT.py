@@ -15,26 +15,22 @@ import importlib
 import os
 importlib.reload(Functions)
 
+# NEW HHI with accounts payable and pension liabilities?
 datadirectory = os.path.join(os.getcwd(), 'data')
 
 FUNDADEBT = 0
 FUNDACMP = 0
 
-FUNDADEBT = pd.merge(FUNDADEBT,
-                     FUNDACMP[['gvkey', 'datadate', 'cmp']],
-                     left_on=['gvkey', 'datadate'],
+FUNDADEBT = pd.merge(FUNDADEBT, FUNDACMP[['gvkey', 'datadate', 'cmp']], left_on=['gvkey', 'datadate'],
                      right_on=['gvkey', 'datadate'], how='left')
-
 
 list_replace = ['cmp', 'dltp', 'dm']
 list_replace = ['dltt', 'dm', 'cmp', 'dcvsub', 'ds', 'dd', 'dn', 'dlto', 'dlc', 'dd1', 'dclo', 'dcvt', 'dltp', 'dcvsr']
 # list_drop = ['cmp','dltp', 'dm']
-
 for i in list_replace:
     FUNDADEBT[i].fillna(0, inplace=True)
 
 F_check = FUNDADEBT[FUNDADEBT.gvkey == 1239]
-
 # variables to modify
 FUNDADEBT['SUBNOTCONV_C'] = FUNDADEBT['ds']
 FUNDADEBT['SUBCONV_C'] = FUNDADEBT['dcvsub']
@@ -78,13 +74,7 @@ FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD
 FUNDADEBT = Functions.hhi_calculator(['SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_U', 'HH2U', FUNDADEBT)
 
 FUNDADEBT = Functions.adj_dd1(FUNDADEBT, list_vars)
-# FUNDADEBT = Functions.adj_dd1_old(FUNDADEBT, list_vars, conditions=['NP_UNDER', 'NP_OVER', 'dd1'])
-# FUNDADEBTSSSSS = FUNDADEBT[FUNDADEBT.gvkey == 1084]
 
-
-
-# FUNDADEBTSSSSSS = FUNDADEBT[FUNDADEBT.gvkey == 1084]
-# FUNDADEBTS2 = FUNDADEBT[(FUNDADEBT.gvkey == 33152)]
 
 FUNDADEBT['CHECK_DEBT2'] = FUNDADEBT[list_vars].sum(axis=1)
 FUNDADEBT['CCC2'] = FUNDADEBT['dltt'] + FUNDADEBT['dd1'] - FUNDADEBT['CHECK_DEBT2']
@@ -124,7 +114,7 @@ FUNDADEBT['TOTALDEBT_C_2'] = FUNDADEBT['SUBNOTCONV_C'] + FUNDADEBT['SUBCONV_C'] 
 
 # FUNDADEBTSSSS = FUNDADEBT[FUNDADEBT.gvkey == 1084]
 
-FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C','SHORT_C'],
+FUNDADEBT = Functions.hhi_calculator(['SUBNOTCONV_C', 'SUBCONV_C', 'CONV_C', 'DD_C', 'DN_C', 'BD_C', 'CL_C', 'SHORT_C'],
                                      'TOTALDEBT_C_2', 'HH1', FUNDADEBT)
 FUNDADEBT = Functions.hhi_calculator(['SUB_C', 'SBN_C', 'BD_C', 'CL_C', 'SHORT_C'], 'TOTALDEBT_C_2', 'HH2', FUNDADEBT)
 # FUNDADEBTSSSS = FUNDADEBT[FUNDADEBT.gvkey == 1048]
@@ -138,6 +128,17 @@ FUNDADEBT = Functions.pct_calculator(list_sum2, 'TOTALDEBT_C_2', 'PCT', FUNDADEB
 
 
 FUNDADEBT.to_csv(os.path.join(datadirectory, "fundadebtprocessedJAN30.csv.gz"), index=False, compression='gzip')
+
+
+
+
+
+
+
+
+
+
+
 
 
 
